@@ -1,5 +1,5 @@
 === Insertabot - AI Chatbot Solution ===
-Contributors: mistykmedia
+Contributors: m1styk
 Tags: chatbot, ai, chat, support, customer service
 Requires at least: 5.9
 Tested up to: 6.9
