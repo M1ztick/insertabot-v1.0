@@ -38,8 +38,8 @@ final class Insertabot_Admin_Settings {
 	 */
 	public static function add_menu() {
 		add_options_page(
-			esc_html__( 'Insertabot Settings', 'insertabot' ),
-			esc_html__( 'Insertabot', 'insertabot' ),
+			esc_html__( 'Insertabot Settings', 'insertabot-ai-chatbot-solution' ),
+			esc_html__( 'Insertabot', 'insertabot-ai-chatbot-solution' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			array( __CLASS__, 'render_page' )
@@ -89,7 +89,7 @@ final class Insertabot_Admin_Settings {
 
 		add_settings_field(
 			self::OPTION_KEY,
-			esc_html__( 'API Key', 'insertabot' ),
+			esc_html__( 'API Key', 'insertabot-ai-chatbot-solution' ),
 			array( __CLASS__, 'field_api_key' ),
 			self::PAGE_SLUG,
 			'insertabot_main_section'
@@ -97,7 +97,7 @@ final class Insertabot_Admin_Settings {
 
 		add_settings_field(
 			self::OPTION_EN,
-			esc_html__( 'Enable Chatbot', 'insertabot' ),
+			esc_html__( 'Enable Chatbot', 'insertabot-ai-chatbot-solution' ),
 			array( __CLASS__, 'field_enabled' ),
 			self::PAGE_SLUG,
 			'insertabot_main_section'
@@ -105,7 +105,7 @@ final class Insertabot_Admin_Settings {
 
 		add_settings_field(
 			self::OPTION_BASE,
-			esc_html__( 'API Base URL', 'insertabot' ),
+			esc_html__( 'API Base URL', 'insertabot-ai-chatbot-solution' ),
 			array( __CLASS__, 'field_api_base' ),
 			self::PAGE_SLUG,
 			'insertabot_main_section'
@@ -231,7 +231,7 @@ final class Insertabot_Admin_Settings {
 			<p class="description">
 				<?php if ($signup) : ?>
 					<a href="<?php echo esc_url($signup); ?>" target="_blank" rel="noopener noreferrer">
-						<strong><?php esc_html_e('Get a free API key â', 'insertabot-ai-chatbot-solution'); ?></strong>
+						<strong><?php esc_html_e('Get a free API key Ã¢ÂÂ', 'insertabot-ai-chatbot-solution'); ?></strong>
 					</a>
 				<?php else : ?>
 					<strong><?php esc_html_e('Insertabot website URL not configured.', 'insertabot-ai-chatbot-solution'); ?></strong>
@@ -241,7 +241,7 @@ final class Insertabot_Admin_Settings {
 			<p class="description">
 				<?php esc_html_e('API key connected.', 'insertabot-ai-chatbot-solution'); ?> <code><?php echo esc_html($masked); ?></code>
 				<?php if ($dash) : ?>
-					<a href="<?php echo esc_url($dash); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('View dashboard â', 'insertabot-ai-chatbot-solution'); ?></a>
+					<a href="<?php echo esc_url($dash); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('View dashboard Ã¢ÂÂ', 'insertabot-ai-chatbot-solution'); ?></a>
 				<?php endif; ?>
 			</p>
 		<?php endif; ?>
@@ -326,7 +326,7 @@ final class Insertabot_Admin_Settings {
 									<p>Sign up and get <strong>50 free messages per day</strong></p>
 									<?php if ($signup) : ?>
 										<a href="<?php echo esc_url($signup); ?>" class="button button-primary button-hero" target="_blank" rel="noopener noreferrer">
-											Get Free API Key â
+											Get Free API Key Ã¢ÂÂ
 										</a>
 									<?php endif; ?>
 								</div>
@@ -344,7 +344,7 @@ final class Insertabot_Admin_Settings {
 								<div class="insertabot-step-number">3</div>
 								<div class="insertabot-step-content">
 									<h3>Enable Chatbot</h3>
-									<p>Toggle âEnable Chatbotâ and save.</p>
+									<p>Toggle Ã¢ÂÂEnable ChatbotÃ¢ÂÂ and save.</p>
 								</div>
 							</div>
 						</div>
@@ -420,7 +420,7 @@ final class Insertabot_Admin_Settings {
 				<h3><span class="dashicons dashicons-book"></span> Need Help?</h3>
 				<p>Check out our documentation for setup guides and troubleshooting.</p>
 				<a href="<?php echo esc_url($docs); ?>" class="button" target="_blank" rel="noopener noreferrer">
-					View Documentation â
+					View Documentation Ã¢ÂÂ
 				</a>
 			</div>
 		<?php endif; ?>
