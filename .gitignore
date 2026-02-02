@@ -78,3 +78,4 @@ scripts/ENV
 # Reference files (not for version control)
 QUICK_REFERENCE.txt
 .vscode/extensions.json
+insertabot/.vscode/extensions.json
