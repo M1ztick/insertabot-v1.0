@@ -18,6 +18,11 @@ export interface SendEmailResult {
 /**
  * Send an email using Cloudflare MailChannels API
  * MailChannels is free for Cloudflare Workers
+ *
+ * DKIM Configuration:
+ * - Uses Cloudflare Email Routing DKIM key (cf2024-1._domainkey.insertabot.io)
+ * - This ensures emails pass DMARC authentication
+ * - Required for deliverability and preventing spoofing
  */
 export async function sendEmail(options: EmailOptions): Promise<SendEmailResult> {
 	try {
@@ -30,6 +35,8 @@ export async function sendEmail(options: EmailOptions): Promise<SendEmailResult>
 				personalizations: [
 					{
 						to: [{ email: options.to }],
+						dkim_domain: 'insertabot.io',
+						dkim_selector: 'cf2024-1',
 					},
 				],
 				from: {
