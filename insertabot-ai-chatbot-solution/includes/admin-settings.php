@@ -13,9 +13,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Suppress IDE warnings for WordPress functions
 if ( ! function_exists( 'add_action' ) ) {
-	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-		error_log( 'Insertabot: WordPress functions not available' );
-	}
 	return;
 }
 
