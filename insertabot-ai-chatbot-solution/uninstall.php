@@ -1,7 +1,7 @@
 <?php
 
 if (!defined('WP_UNINSTALL_PLUGIN')) {
-    exit;
+    wp_die('Uninstall not called from WordPress.');
 }
 
 // Remove plugin options and sensitive stored data

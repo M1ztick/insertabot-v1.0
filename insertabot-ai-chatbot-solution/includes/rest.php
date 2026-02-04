@@ -6,7 +6,7 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+    wp_die( 'Direct access not allowed.' );
 }
 
 add_action( 'rest_api_init', 'insertabot_register_rest_routes' );
@@ -77,6 +77,11 @@ function insertabot_widget_token_endpoint( WP_REST_Request $request ) {
 
         $payload = $site . '|' . $expires . '|' . $random;
         $secret  = defined( 'AUTH_KEY' ) && ! empty( AUTH_KEY ) ? AUTH_KEY : 'insertabot_fallback_secret';
+        
+        if ( empty( $payload ) || empty( $secret ) ) {
+            return new WP_Error( 'payload_error', 'Invalid payload or secret', array( 'status' => 500 ) );
+        }
+        
         $sig     = hash_hmac( 'sha256', $payload, $secret );
 
         if ( false === $sig ) {
@@ -84,7 +89,7 @@ function insertabot_widget_token_endpoint( WP_REST_Request $request ) {
         }
 
         $token = base64_encode( $payload . '|' . $sig );
-        if ( false === $token ) {
+        if ( false === $token || empty( $token ) ) {
             return new WP_Error( 'encoding_failed', 'Failed to encode token', array( 'status' => 500 ) );
         }
 

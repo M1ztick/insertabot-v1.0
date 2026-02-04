@@ -16,7 +16,7 @@
 
 // Exit if accessed directly
 if (!defined('ABSPATH')) {
-    exit;
+    wp_die('Direct access not allowed.');
 }
 
 // Define plugin constants
@@ -27,10 +27,18 @@ define('INSERTABOT_API_URL', 'https://api.insertabot.io');
 define('INSERTABOT_WEBSITE_URL', 'https://insertabot.io');
 
 // Load required includes
-require_once INSERTABOT_PLUGIN_DIR . 'includes/class-security.php';
-require_once INSERTABOT_PLUGIN_DIR . 'includes/admin-settings.php';
-require_once INSERTABOT_PLUGIN_DIR . 'includes/rest.php';
-require_once INSERTABOT_PLUGIN_DIR . 'includes/privacy.php';
+if (file_exists(INSERTABOT_PLUGIN_DIR . 'includes/class-security.php')) {
+    require_once INSERTABOT_PLUGIN_DIR . 'includes/class-security.php';
+}
+if (file_exists(INSERTABOT_PLUGIN_DIR . 'includes/admin-settings.php')) {
+    require_once INSERTABOT_PLUGIN_DIR . 'includes/admin-settings.php';
+}
+if (file_exists(INSERTABOT_PLUGIN_DIR . 'includes/rest.php')) {
+    require_once INSERTABOT_PLUGIN_DIR . 'includes/rest.php';
+}
+if (file_exists(INSERTABOT_PLUGIN_DIR . 'includes/privacy.php')) {
+    require_once INSERTABOT_PLUGIN_DIR . 'includes/privacy.php';
+}
 
 
 

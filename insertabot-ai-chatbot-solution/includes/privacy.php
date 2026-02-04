@@ -7,7 +7,7 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+    wp_die( 'Direct access not allowed.' );
 }
 
 add_filter( 'wp_privacy_personal_data_exporters', 'insertabot_register_personal_data_exporter' );
@@ -28,10 +28,15 @@ function insertabot_register_personal_data_exporter( array $exporters ) {
 }
 
 /**
+ * Number of logs to process per page for pagination
+ */
+define( 'INSERTABOT_PRIVACY_LOGS_PER_PAGE', 100 );
+
+/**
  * Export personal data tied to an email address (security logs)
  *
  * @param string $email_address Email address to export data for.
- * @param int    $page          Page number.
+ * @param int    $page          Page number (1-indexed).
  * @return array Export data array.
  */
 function insertabot_personal_data_exporter( $email_address, $page = 1 ) {
@@ -43,12 +48,30 @@ function insertabot_personal_data_exporter( $email_address, $page = 1 ) {
         );
     }
 
-    $user_id = $user->ID;
-    $logs    = (array) get_option( 'insertabot_security_logs', array() );
+    $user_id  = $user->ID;
+    $per_page = INSERTABOT_PRIVACY_LOGS_PER_PAGE;
+    $page     = max( 1, (int) $page );
+    $offset   = ( $page - 1 ) * $per_page;
 
-    $data = array();
-    foreach ( $logs as $index => $log ) {
-        if ( isset( $log['user_id'] ) && intval( $log['user_id'] ) === $user_id ) {
+    $logs = (array) get_option( 'insertabot_security_logs', array() );
+
+    if ( empty( $logs ) ) {
+        return array(
+            'data' => array(),
+            'done' => true,
+        );
+    }
+
+    // Get paginated subset of logs
+    $total_logs   = count( $logs );
+    $logs_page    = array_slice( $logs, $offset, $per_page, true );
+    $is_last_page = ( $offset + $per_page ) >= $total_logs;
+
+    $data        = array();
+    $group_label = __( 'Insertabot security logs', 'insertabot-ai-chatbot-solution' );
+
+    foreach ( $logs_page as $index => $log ) {
+        if ( isset( $log['user_id'] ) && (int) $log['user_id'] === $user_id ) {
             $item_id = 'insertabot-log-' . $index;
             $entries = array(
                 array(
@@ -71,7 +94,7 @@ function insertabot_personal_data_exporter( $email_address, $page = 1 ) {
 
             $data[] = array(
                 'group_id'    => 'insertabot-logs',
-                'group_label' => __( 'Insertabot security logs', 'insertabot-ai-chatbot-solution' ),
+                'group_label' => $group_label,
                 'item_id'     => $item_id,
                 'data'        => $entries,
             );
@@ -80,7 +103,7 @@ function insertabot_personal_data_exporter( $email_address, $page = 1 ) {
 
     return array(
         'data' => $data,
-        'done' => true,
+        'done' => $is_last_page,
     );
 }
 
@@ -101,17 +124,19 @@ function insertabot_register_personal_data_eraser( array $erasers ) {
 /**
  * Erase personal data tied to an email address (security logs)
  *
+ * Note: Security logs are capped at 100 entries, so we process all at once
+ * rather than paginating. This is more efficient for small, bounded datasets.
+ *
  * @param string $email_address Email address to erase data for.
- * @param int    $page          Page number.
+ * @param int    $page          Page number (unused - completes in one pass).
  * @return array Erase result array.
  */
 function insertabot_personal_data_eraser( $email_address, $page = 1 ) {
     $result = array(
-        'items_removed'    => array(),
-        'items_retained'   => array(),
-        'items_erased'     => array(),
-        'items_unverified' => array(),
-        'done'             => true,
+        'items_removed'  => false,
+        'items_retained' => false,
+        'messages'       => array(),
+        'done'           => true,
     );
 
     $user = get_user_by( 'email', $email_address );
@@ -120,31 +145,42 @@ function insertabot_personal_data_eraser( $email_address, $page = 1 ) {
     }
 
     $user_id = $user->ID;
+    $logs    = (array) get_option( 'insertabot_security_logs', array() );
 
-    $logs     = (array) get_option( 'insertabot_security_logs', array() );
-    $new_logs = array();
-    $removed  = 0;
+    if ( empty( $logs ) ) {
+        return $result;
+    }
+
+    // Filter out logs belonging to this user
+    $filtered_logs = array();
+    $removed       = 0;
 
     foreach ( $logs as $log ) {
-        if ( isset( $log['user_id'] ) && intval( $log['user_id'] ) === $user_id ) {
-            // Remove entire log entry that contains personal data for the user
+        if ( isset( $log['user_id'] ) && (int) $log['user_id'] === $user_id ) {
             $removed++;
-            continue;
+        } else {
+            $filtered_logs[] = $log;
         }
-        $new_logs[] = $log;
     }
 
     if ( $removed > 0 ) {
-        update_option( 'insertabot_security_logs', $new_logs, false );
-        $result['items_removed'][] = array(
-            'group_id'    => 'insertabot-logs',
-            'item_id'     => 'insertabot-logs',
-            'description' => sprintf(
+        $updated = update_option( 'insertabot_security_logs', $filtered_logs, false );
+        if ( $updated ) {
+            $result['items_removed'] = true;
+            $result['messages'][]    = sprintf(
                 /* translators: %d: number of log entries removed */
-                _n( '%d security log entry removed', '%d security log entries removed', $removed, 'insertabot-ai-chatbot-solution' ),
+                _n(
+                    '%d security log entry removed',
+                    '%d security log entries removed',
+                    $removed,
+                    'insertabot-ai-chatbot-solution'
+                ),
                 $removed
-            ),
-        );
+            );
+        } else {
+            $result['items_retained'] = true;
+            $result['messages'][]     = __( 'Failed to update security logs', 'insertabot-ai-chatbot-solution' );
+        }
     }
 
     return $result;

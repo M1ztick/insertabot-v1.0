@@ -8,11 +8,14 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+	return;
 }
 
 // Suppress IDE warnings for WordPress functions
 if ( ! function_exists( 'add_action' ) ) {
+	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		error_log( 'Insertabot: WordPress functions not available' );
+	}
 	return;
 }
 
@@ -163,11 +166,8 @@ final class Insertabot_Admin_Settings {
 	public static function sanitize_enabled($value): bool {
 		$enabled = !empty($value);
 
-		$api_key = (string) get_option(self::OPTION_KEY, '');
-		$has_key = ($api_key !== '');
-
 		// Prevent enabling without API key.
-		if ($enabled && !$has_key) {
+		if ($enabled && !self::has_api_key()) {
 			add_settings_error(
 				'insertabot_settings_messages',
 				'insertabot_enabled_no_key',
@@ -211,8 +211,10 @@ final class Insertabot_Admin_Settings {
 
 		// For security, do NOT pre-fill the field with the raw key. Let users paste a new key.
 		$masked = '';
-		if ($has_key && is_string($api_key) && $api_key !== '') {
+		if ($has_key && is_string($api_key) && strlen($api_key) >= 12) {
 			$masked = substr($api_key, 0, 8) . '...' . substr($api_key, -4);
+		} elseif ($has_key && is_string($api_key) && $api_key !== '') {
+			$masked = '***';
 		}
 
 		?>
@@ -231,7 +233,7 @@ final class Insertabot_Admin_Settings {
 			<p class="description">
 				<?php if ($signup) : ?>
 					<a href="<?php echo esc_url($signup); ?>" target="_blank" rel="noopener noreferrer">
-						<strong><?php esc_html_e('Get a free API key Ã¢ÂÂ', 'insertabot-ai-chatbot-solution'); ?></strong>
+						<strong><?php esc_html_e('Get a free API key →', 'insertabot-ai-chatbot-solution'); ?></strong>
 					</a>
 				<?php else : ?>
 					<strong><?php esc_html_e('Insertabot website URL not configured.', 'insertabot-ai-chatbot-solution'); ?></strong>
@@ -241,7 +243,7 @@ final class Insertabot_Admin_Settings {
 			<p class="description">
 				<?php esc_html_e('API key connected.', 'insertabot-ai-chatbot-solution'); ?> <code><?php echo esc_html($masked); ?></code>
 				<?php if ($dash) : ?>
-					<a href="<?php echo esc_url($dash); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('View dashboard Ã¢ÂÂ', 'insertabot-ai-chatbot-solution'); ?></a>
+					<a href="<?php echo esc_url($dash); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('View dashboard →', 'insertabot-ai-chatbot-solution'); ?></a>
 				<?php endif; ?>
 			</p>
 		<?php endif; ?>
@@ -264,9 +266,13 @@ final class Insertabot_Admin_Settings {
 			<span class="insertabot-toggle-slider" aria-hidden="true"></span>
 		</label>
 		<p class="description">
-			<?php echo $has_key
-				? esc_html__('Toggle to show/hide the chatbot on the website.', 'insertabot-ai-chatbot-solution')
-				: esc_html__('Enter API key above to enable the chatbot.', 'insertabot-ai-chatbot-solution'); ?>
+			<?php
+			if ( $has_key ) {
+				esc_html_e( 'Toggle to show/hide the chatbot on the website.', 'insertabot-ai-chatbot-solution' );
+			} else {
+				esc_html_e( 'Enter API key above to enable the chatbot.', 'insertabot-ai-chatbot-solution' );
+			}
+			?>
 		</p>
 		<?php
 	}
@@ -326,7 +332,7 @@ final class Insertabot_Admin_Settings {
 									<p>Sign up and get <strong>50 free messages per day</strong></p>
 									<?php if ($signup) : ?>
 										<a href="<?php echo esc_url($signup); ?>" class="button button-primary button-hero" target="_blank" rel="noopener noreferrer">
-											Get Free API Key Ã¢ÂÂ
+											Get Free API Key →
 										</a>
 									<?php endif; ?>
 								</div>
@@ -369,7 +375,7 @@ final class Insertabot_Admin_Settings {
 				</div>
 			<?php endif; ?>
 
-			<div class="insertabot-settings-card <?php echo $has_key ? 'insertabot-has-key' : ''; ?>">
+			<div class="insertabot-settings-card<?php echo $has_key ? ' insertabot-has-key' : ''; ?>">
 				<form method="post" action="options.php">
 					<?php
 						settings_fields('insertabot_settings_group');
@@ -420,7 +426,7 @@ final class Insertabot_Admin_Settings {
 				<h3><span class="dashicons dashicons-book"></span> Need Help?</h3>
 				<p>Check out our documentation for setup guides and troubleshooting.</p>
 				<a href="<?php echo esc_url($docs); ?>" class="button" target="_blank" rel="noopener noreferrer">
-					View Documentation Ã¢ÂÂ
+					View Documentation →
 				</a>
 			</div>
 		<?php endif; ?>
@@ -430,13 +436,35 @@ final class Insertabot_Admin_Settings {
 
 	public static function sanitize_api_base($value): string {
 		$value = is_string($value) ? trim($value) : '';
-		$value = esc_url_raw($value);
-
+		
+		// If empty, use default
 		if ($value === '') {
-			$value = defined('INSERTABOT_API_URL') ? INSERTABOT_API_URL : '';
+			return defined('INSERTABOT_API_URL') ? INSERTABOT_API_URL : '';
+		}
+		
+		// Validate URL format
+		if (!filter_var($value, FILTER_VALIDATE_URL)) {
+			add_settings_error(
+				'insertabot_settings_messages',
+				'insertabot_invalid_api_base',
+				esc_html__('Invalid API Base URL format.', 'insertabot-ai-chatbot-solution'),
+				'error'
+			);
+			return defined('INSERTABOT_API_URL') ? INSERTABOT_API_URL : '';
+		}
+		
+		$sanitized = esc_url_raw($value);
+		if (empty($sanitized)) {
+			add_settings_error(
+				'insertabot_settings_messages',
+				'insertabot_sanitize_api_base_failed',
+				esc_html__('Failed to sanitize API Base URL.', 'insertabot-ai-chatbot-solution'),
+				'error'
+			);
+			return defined('INSERTABOT_API_URL') ? INSERTABOT_API_URL : '';
 		}
 
-		return $value;
+		return $sanitized;
 	}
 
 }

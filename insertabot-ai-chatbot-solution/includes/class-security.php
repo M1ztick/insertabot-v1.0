@@ -6,39 +6,54 @@
  */
 
 if (!defined('ABSPATH')) {
-    exit;
+    wp_die('Direct access not allowed.');
 }
 
 class Insertabot_Security {
-    
+
     /**
-     * Encryption method
+     * Legacy encryption method (for backwards compatibility)
      */
-    private const CIPHER_METHOD = 'AES-256-CBC';
-    
+    private const LEGACY_CIPHER_METHOD = 'AES-256-CBC';
+
+    /**
+     * Encryption version prefix for identifying encryption method
+     */
+    private const SODIUM_PREFIX = 'sodium:';
+
+    /**
+     * Check if Sodium extension is available
+     *
+     * @return bool
+     */
+    private static function sodium_available() {
+        return extension_loaded('sodium') && function_exists('sodium_crypto_secretbox');
+    }
+
     /**
      * Get encryption key derived from WordPress salts
-     * 
-     * @return string
+     *
+     * @return string 32-byte key for Sodium
      */
     private static function get_encryption_key() {
         // Use WordPress salts to create a unique encryption key
         $salt = defined('AUTH_KEY') ? AUTH_KEY : '';
         $salt .= defined('SECURE_AUTH_KEY') ? SECURE_AUTH_KEY : '';
         $salt .= defined('LOGGED_IN_KEY') ? LOGGED_IN_KEY : '';
-        
+
         if (empty($salt)) {
             // Fallback if salts aren't defined (shouldn't happen in production)
             $salt = 'insertabot_fallback_' . DB_NAME . DB_USER;
         }
-        
-        // Create a 256-bit key
+
+        // Create a 256-bit (32-byte) key - required for both Sodium and AES-256
         return hash('sha256', $salt, true);
     }
-    
+
     /**
-     * Encrypt sensitive data
-     * 
+     * Encrypt sensitive data using Sodium (XSalsa20-Poly1305)
+     * Falls back to AES-256-CBC if Sodium is unavailable
+     *
      * @param string $data Data to encrypt
      * @return string|false Encrypted data or false on failure
      */
@@ -46,35 +61,90 @@ class Insertabot_Security {
         if (empty($data)) {
             return $data;
         }
-        
+
+        // Use Sodium if available (modern, recommended approach)
+        if (self::sodium_available()) {
+            return self::encrypt_sodium($data);
+        }
+
+        // Fallback to OpenSSL for older PHP installations
+        return self::encrypt_legacy($data);
+    }
+
+    /**
+     * Encrypt using Sodium (XSalsa20-Poly1305 authenticated encryption)
+     *
+     * @param string $data Data to encrypt
+     * @return string|false Encrypted data or false on failure
+     */
+    private static function encrypt_sodium($data) {
         try {
             $key = self::get_encryption_key();
-            $iv_length = openssl_cipher_iv_length(self::CIPHER_METHOD);
-            $iv = openssl_random_pseudo_bytes($iv_length);
-            
-            $encrypted = openssl_encrypt(
-                $data,
-                self::CIPHER_METHOD,
-                $key,
-                OPENSSL_RAW_DATA,
-                $iv
-            );
-            
-            if ($encrypted === false) {
-                return false;
-            }
-            
-            // Combine IV and encrypted data, then base64 encode
-            return base64_encode($iv . $encrypted);
-            
+
+            // Generate random nonce (24 bytes for XSalsa20)
+            $nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+
+            // Encrypt with authenticated encryption (includes MAC automatically)
+            $ciphertext = sodium_crypto_secretbox($data, $nonce, $key);
+
+            // Clear sensitive data from memory
+            sodium_memzero($key);
+
+            // Prefix with version identifier, combine nonce + ciphertext, base64 encode
+            return self::SODIUM_PREFIX . base64_encode($nonce . $ciphertext);
+
         } catch (Exception $e) {
             return false;
         }
     }
-    
+
     /**
-     * Decrypt sensitive data
-     * 
+     * Legacy encrypt using AES-256-CBC (for environments without Sodium)
+     *
+     * @param string $data Data to encrypt
+     * @return string|false Encrypted data or false on failure
+     */
+    private static function encrypt_legacy($data) {
+        try {
+            $key = self::get_encryption_key();
+            $iv_length = openssl_cipher_iv_length(self::LEGACY_CIPHER_METHOD);
+
+            if ($iv_length === false) {
+                return false;
+            }
+
+            $iv = openssl_random_pseudo_bytes($iv_length, $strong);
+
+            if ($iv === false || !$strong) {
+                return false;
+            }
+
+            $encrypted = openssl_encrypt(
+                $data,
+                self::LEGACY_CIPHER_METHOD,
+                $key,
+                OPENSSL_RAW_DATA,
+                $iv
+            );
+
+            if ($encrypted === false) {
+                return false;
+            }
+
+            // Add HMAC for integrity verification
+            $hmac = hash_hmac('sha256', $iv . $encrypted, $key, true);
+
+            // Combine IV, encrypted data, and HMAC, then base64 encode
+            return base64_encode($iv . $encrypted . $hmac);
+
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Decrypt sensitive data (auto-detects encryption method)
+     *
      * @param string $encrypted_data Encrypted data
      * @return string|false Decrypted data or false on failure
      */
@@ -82,33 +152,107 @@ class Insertabot_Security {
         if (empty($encrypted_data)) {
             return $encrypted_data;
         }
-        
+
+        // Check if encrypted with Sodium (has prefix)
+        if (strpos($encrypted_data, self::SODIUM_PREFIX) === 0) {
+            return self::decrypt_sodium($encrypted_data);
+        }
+
+        // Legacy AES-256-CBC decryption
+        return self::decrypt_legacy($encrypted_data);
+    }
+
+    /**
+     * Decrypt using Sodium
+     *
+     * @param string $encrypted_data Encrypted data with sodium: prefix
+     * @return string|false Decrypted data or false on failure
+     */
+    private static function decrypt_sodium($encrypted_data) {
+        if (!self::sodium_available()) {
+            return false;
+        }
+
+        try {
+            $key = self::get_encryption_key();
+
+            // Remove prefix and decode
+            $data = base64_decode(substr($encrypted_data, strlen(self::SODIUM_PREFIX)), true);
+
+            if ($data === false || strlen($data) < SODIUM_CRYPTO_SECRETBOX_NONCEBYTES) {
+                return false;
+            }
+
+            // Extract nonce and ciphertext
+            $nonce = substr($data, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+            $ciphertext = substr($data, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+
+            // Decrypt (also verifies MAC automatically)
+            $decrypted = sodium_crypto_secretbox_open($ciphertext, $nonce, $key);
+
+            // Clear sensitive data from memory
+            sodium_memzero($key);
+
+            if ($decrypted === false) {
+                return false;
+            }
+
+            return $decrypted;
+
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Legacy decrypt using AES-256-CBC
+     *
+     * @param string $encrypted_data Encrypted data
+     * @return string|false Decrypted data or false on failure
+     */
+    private static function decrypt_legacy($encrypted_data) {
         try {
             $key = self::get_encryption_key();
             $data = base64_decode($encrypted_data, true);
-            
+
             if ($data === false) {
                 return false;
             }
-            
-            $iv_length = openssl_cipher_iv_length(self::CIPHER_METHOD);
+
+            $iv_length = openssl_cipher_iv_length(self::LEGACY_CIPHER_METHOD);
+
+            if ($iv_length === false || strlen($data) < ($iv_length + 32)) {
+                return false;
+            }
+
             $iv = substr($data, 0, $iv_length);
-            $encrypted = substr($data, $iv_length);
-            
+            $encrypted = substr($data, $iv_length, -32);
+            $stored_hmac = substr($data, -32);
+
+            if (strlen($iv) !== $iv_length) {
+                return false;
+            }
+
+            // Verify HMAC before decryption
+            $expected_hmac = hash_hmac('sha256', $iv . $encrypted, $key, true);
+            if (!hash_equals($expected_hmac, $stored_hmac)) {
+                return false;
+            }
+
             $decrypted = openssl_decrypt(
                 $encrypted,
-                self::CIPHER_METHOD,
+                self::LEGACY_CIPHER_METHOD,
                 $key,
                 OPENSSL_RAW_DATA,
                 $iv
             );
-            
+
             if ($decrypted === false) {
                 return false;
             }
-            
+
             return $decrypted;
-            
+
         } catch (Exception $e) {
             return false;
         }
@@ -230,12 +374,16 @@ class Insertabot_Security {
     public static function get_client_ip($anonymize = true) {
         $ip = '';
         
-        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-            $ip = sanitize_text_field(wp_unslash($_SERVER['HTTP_CLIENT_IP']));
-        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $ip = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR']));
-        } elseif (!empty($_SERVER['REMOTE_ADDR'])) {
-            $ip = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
+        try {
+            if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+                $ip = sanitize_text_field(wp_unslash($_SERVER['HTTP_CLIENT_IP']));
+            } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+                $ip = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR']));
+            } elseif (!empty($_SERVER['REMOTE_ADDR'])) {
+                $ip = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
+            }
+        } catch (Exception $e) {
+            return '0.0.0.0';
         }
         
         $ip = filter_var($ip, FILTER_VALIDATE_IP);
@@ -245,17 +393,21 @@ class Insertabot_Security {
             if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
                 // IPv4: set last octet to 0
                 $parts = explode('.', $ip);
-                $parts[3] = '0';
-                $ip = implode('.', $parts);
+                if (count($parts) === 4) {
+                    $parts[3] = '0';
+                    $ip = implode('.', $parts);
+                }
             } elseif (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
                 // IPv6: set last 80 bits to 0
                 $parts = explode(':', $ip);
-                for ($i = 5; $i < 8; $i++) {
-                    if (isset($parts[$i])) {
-                        $parts[$i] = '0';
+                if (count($parts) >= 6) {
+                    for ($i = 5; $i < 8; $i++) {
+                        if (isset($parts[$i])) {
+                            $parts[$i] = '0';
+                        }
                     }
+                    $ip = implode(':', $parts);
                 }
-                $ip = implode(':', $parts);
             }
         }
         
@@ -270,6 +422,9 @@ class Insertabot_Security {
      * @return bool Whether nonce is valid
      */
     public static function verify_nonce($nonce, $action = 'insertabot_action') {
+        if (empty($nonce) || !is_string($nonce)) {
+            return false;
+        }
         return wp_verify_nonce($nonce, $action) !== false;
     }
     

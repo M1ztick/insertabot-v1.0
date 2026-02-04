@@ -28,10 +28,19 @@
       var s = document.createElement('script');
       s.async = true;
 
-      // Safely construct script URL with error handling
+      // Safely construct script URL with validation
       var baseUrl = '';
       if (apiBase && typeof apiBase === 'string') {
-        baseUrl = apiBase.replace(/\/$/, '');
+        // Validate URL to prevent XSS
+        try {
+          var url = new URL(apiBase);
+          if (url.protocol === 'https:' || url.protocol === 'http:') {
+            baseUrl = url.origin;
+          }
+        } catch (e) {
+          console.error('[Insertabot] Invalid API base URL');
+          return;
+        }
       }
       s.src = baseUrl + '/widget.js';
 
@@ -87,17 +96,21 @@
   }
 
   fetch(tokenEndpoint, fetchOptions).then(function (res) {
-    clearTimeout(timeoutId);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
     if (!res.ok) {
       throw new Error('Token request failed with status: ' + res.status);
     }
-    return res.json();
+    try {
+      return res.json();
+    } catch (e) {
+      throw new Error('Invalid JSON response');
+    }
   }).then(function (json) {
     if (json && json.token) {
       var sanitizedToken = sanitizeToken(json.token);
       if (sanitizedToken) {
-        // Expose token to page script in case remote widget reads it
-        window.__INSERTABOT_WIDGET_TOKEN = sanitizedToken;
         loadRemote(sanitizedToken);
       } else {
         console.error('[Insertabot] Token validation failed');
@@ -108,11 +121,13 @@
       loadRemote();
     }
   }).catch(function (error) {
-    clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    if (error && error.name === 'AbortError') {
       console.error('[Insertabot] Token request aborted due to timeout');
     } else {
-      console.error('[Insertabot] Token request failed:', error.message);
+      console.error('[Insertabot] Token request failed:', error && error.message ? error.message : 'Unknown error');
     }
     loadRemote();
   });
