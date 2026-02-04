@@ -14,7 +14,7 @@ Add a customizable AI chatbot to your WordPress site. Real-time web search, unli
 
 **Insertabot** brings the power of AI chat to your WordPress website in just minutes. No coding required!
 
-### 🚀 What Makes Insertabot Different?
+###  What Makes Insertabot Different?
 
 * **Real-Time Web Search** - Unlike ChatGPT, Insertabot searches the web for current information
 * **Lightning Fast Setup** - Install plugin, add API key, done! Takes under 5 minutes
@@ -22,16 +22,16 @@ Add a customizable AI chatbot to your WordPress site. Real-time web search, unli
 * **Mobile Optimized** - Beautiful chat experience on all devices
 * **Free to Start** - 50 messages per day, no credit card required
 
-### ✨ Key Features
+###  Key Features
 
-* 🤖 **AI-Powered Conversations** - Smart, natural responses to visitor questions
-* 🌐 **Real-Time Web Search** - Always up-to-date answers (not outdated training data)
-* 🎨 **Full Customization** - Colors, branding, greeting messages
-* 📱 **Mobile-Friendly Widget** - Works perfectly on phones and tablets
-* ⚡ **Zero Code Required** - Simple settings page, no technical skills needed
-* 🔒 **Privacy Focused** - Your data is secure and never sold
+*  **AI-Powered Conversations** - Smart, natural responses to visitor questions
+*  **Real-Time Web Search** - Always up-to-date answers (not outdated training data)
+*  **Full Customization** - Colors, branding, greeting messages
+*  **Mobile-Friendly Widget** - Works perfectly on phones and tablets
+*  **Zero Code Required** - Simple settings page, no technical skills needed
+*  **Privacy Focused** - Your data is secure and never sold
 
-### 💰 Pricing
+###  Pricing
 
 **Free Plan**
 * 50 messages per day
@@ -48,7 +48,7 @@ Add a customizable AI chatbot to your WordPress site. Real-time web search, unli
 
 [Get Your Free API Key →](https://insertabot.io/signup)
 
-### 🎯 Perfect For:
+###  Perfect For:
 
 * E-commerce stores (product questions, support)
 * Blogs (engaging with readers)
@@ -56,14 +56,14 @@ Add a customizable AI chatbot to your WordPress site. Real-time web search, unli
 * SaaS products (onboarding help)
 * Educational sites (tutoring, Q&A)
 
-### 📚 How It Works
+###  How It Works
 
 1. **Install Plugin** - Download and activate from WordPress.org
 2. **Get API Key** - Sign up free at insertabot.io
 3. **Paste & Enable** - Enter your API key and toggle on
 4. **Done!** - Your AI chatbot is now live on your site
 
-### 🌟 Why Users Love It
+###  Why Users Love It
 
 > "Set up in 3 minutes. Visitors are actually using it. Best $10/month I spend." - Sarah, blogger
 
@@ -71,7 +71,7 @@ Add a customizable AI chatbot to your WordPress site. Real-time web search, unli
 
 > "Free tier is perfect for testing. Upgraded after seeing how well it works." - Jessica, startup founder
 
-### 🔧 Technical Details
+###  Technical Details
 
 * Async script loading (won't slow down your site)
 * GDPR compliant
@@ -120,7 +120,7 @@ The plugin implements WordPress personal data exporters and erasers. Site admini
 * IP addresses in logs are anonymized (last octet/80 bits zeroed)
 * No personal data is sent to third parties beyond what is necessary for chatbot functionality
 
-### 🆘 Support
+###  Support
 
 Need help? We're here for you:
 
@@ -128,7 +128,7 @@ Need help? We're here for you:
 * [Dashboard](https://insertabot.io/dashboard)
 * Email: support@insertabot.io
 
-### 🎁 Get Started Free
+###  Get Started Free
 
 No credit card required. 50 messages per day included.
 
