@@ -76,7 +76,7 @@ function insertabot_widget_token_endpoint( WP_REST_Request $request ) {
         }
 
         $payload = $site . '|' . $expires . '|' . $random;
-        $secret  = defined( 'AUTH_KEY' ) && ! empty( AUTH_KEY ) ? AUTH_KEY : 'insertabot_fallback_secret';
+        $secret  = defined( 'AUTH_KEY' ) && ! empty( AUTH_KEY ) ? AUTH_KEY : wp_salt( 'auth' );
         
         if ( empty( $payload ) || empty( $secret ) ) {
             return new WP_Error( 'payload_error', 'Invalid payload or secret', array( 'status' => 500 ) );

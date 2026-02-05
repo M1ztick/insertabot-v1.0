@@ -29,15 +29,23 @@ define('INSERTABOT_WEBSITE_URL', 'https://insertabot.io');
 // Load required includes
 if (file_exists(INSERTABOT_PLUGIN_DIR . 'includes/class-security.php')) {
     require_once INSERTABOT_PLUGIN_DIR . 'includes/class-security.php';
+} else {
+    error_log('Insertabot: Missing required file - class-security.php');
 }
 if (file_exists(INSERTABOT_PLUGIN_DIR . 'includes/admin-settings.php')) {
     require_once INSERTABOT_PLUGIN_DIR . 'includes/admin-settings.php';
+} else {
+    error_log('Insertabot: Missing required file - admin-settings.php');
 }
 if (file_exists(INSERTABOT_PLUGIN_DIR . 'includes/rest.php')) {
     require_once INSERTABOT_PLUGIN_DIR . 'includes/rest.php';
+} else {
+    error_log('Insertabot: Missing required file - rest.php');
 }
 if (file_exists(INSERTABOT_PLUGIN_DIR . 'includes/privacy.php')) {
     require_once INSERTABOT_PLUGIN_DIR . 'includes/privacy.php';
+} else {
+    error_log('Insertabot: Missing required file - privacy.php');
 }
 
 

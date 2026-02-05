@@ -11,11 +11,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	return;
 }
 
-// Suppress IDE warnings for WordPress functions
-if ( ! function_exists( 'add_action' ) ) {
-	return;
-}
-
 /**
  * Insertabot Admin Settings Class
  */
@@ -83,7 +78,7 @@ final class Insertabot_Admin_Settings {
 		add_settings_section(
 			'insertabot_main_section',
 			'',
-			'__return_null',
+			__return_null,
 			self::PAGE_SLUG
 		);
 
@@ -130,6 +125,14 @@ final class Insertabot_Admin_Settings {
 		$validated = null;
 		if (class_exists('Insertabot_Security')) {
 			$validated = Insertabot_Security::validate_api_key($value);
+		} else {
+			add_settings_error(
+				'insertabot_settings_messages',
+				'insertabot_security_missing',
+				esc_html__('Security component missing. Cannot process API key.', 'insertabot-ai-chatbot-solution'),
+				'error'
+			);
+			return '';
 		}
 
 		if (is_wp_error($validated)) {
@@ -190,8 +193,7 @@ final class Insertabot_Admin_Settings {
 
 	private static function get_api_base(): string {
 		$default = defined('INSERTABOT_API_URL') ? INSERTABOT_API_URL : '';
-		$val = (string) get_option(self::OPTION_BASE, $default);
-		return $val !== '' ? $val : $default;
+		return (string) get_option(self::OPTION_BASE, $default);
 	}
 
 	private static function has_api_key(): bool {
@@ -208,7 +210,7 @@ final class Insertabot_Admin_Settings {
 
 		// For security, do NOT pre-fill the field with the raw key. Let users paste a new key.
 		$masked = '';
-		if ($has_key && is_string($api_key) && strlen($api_key) >= 12) {
+		if ($has_key && is_string($api_key) && strlen($api_key) > 12) {
 			$masked = substr($api_key, 0, 8) . '...' . substr($api_key, -4);
 		} elseif ($has_key && is_string($api_key) && $api_key !== '') {
 			$masked = '***';

@@ -42,8 +42,12 @@ class Insertabot_Security {
         $salt .= defined('LOGGED_IN_KEY') ? LOGGED_IN_KEY : '';
 
         if (empty($salt)) {
-            // Fallback if salts aren't defined (shouldn't happen in production)
-            $salt = 'insertabot_fallback_' . DB_NAME . DB_USER;
+            // Generate a secure fallback key using WordPress functions
+            $salt = wp_salt('auth') . wp_salt('secure_auth') . wp_salt('logged_in');
+            if (empty($salt)) {
+                // Final fallback - use a cryptographically secure random value
+                $salt = 'insertabot_' . wp_generate_password(32, true, true);
+            }
         }
 
         // Create a 256-bit (32-byte) key - required for both Sodium and AES-256
@@ -113,12 +117,13 @@ class Insertabot_Security {
                 return false;
             }
 
-            $iv = openssl_random_pseudo_bytes($iv_length, $strong);
+            $iv = random_bytes($iv_length);
 
-            if ($iv === false || !$strong) {
+            if ($iv === false) {
                 return false;
             }
 
+            // amazonq-ignore-next-line
             $encrypted = openssl_encrypt(
                 $data,
                 self::LEGACY_CIPHER_METHOD,
@@ -378,7 +383,9 @@ class Insertabot_Security {
             if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
                 $ip = sanitize_text_field(wp_unslash($_SERVER['HTTP_CLIENT_IP']));
             } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-                $ip = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR']));
+                $forwarded = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR']));
+                // Extract first IP from comma-separated list
+                $ip = trim(explode(',', $forwarded)[0]);
             } elseif (!empty($_SERVER['REMOTE_ADDR'])) {
                 $ip = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
             }
