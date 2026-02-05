@@ -350,7 +350,7 @@ final class Insertabot_Admin_Settings {
 								<div class="insertabot-step-number">3</div>
 								<div class="insertabot-step-content">
 									<h3>Enable Chatbot</h3>
-									<p>Toggle Ã¢ÂÂEnable ChatbotÃ¢ÂÂ and save.</p>
+									<p>Toggle "Enable Chatbot" and save.</p>
 								</div>
 							</div>
 						</div>
