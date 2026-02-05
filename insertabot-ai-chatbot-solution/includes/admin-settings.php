@@ -78,7 +78,7 @@ final class Insertabot_Admin_Settings {
 		add_settings_section(
 			'insertabot_main_section',
 			'',
-			__return_null,
+			'__return_null',
 			self::PAGE_SLUG
 		);
 
