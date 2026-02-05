@@ -22,12 +22,20 @@ class Insertabot_Security {
     private const SODIUM_PREFIX = 'sodium:';
 
     /**
+     * Cached result of sodium availability check
+     */
+    private static $sodium_available = null;
+
+    /**
      * Check if Sodium extension is available
      *
      * @return bool
      */
     private static function sodium_available() {
-        return extension_loaded('sodium') && function_exists('sodium_crypto_secretbox');
+        if (self::$sodium_available === null) {
+            self::$sodium_available = extension_loaded('sodium') && function_exists('sodium_crypto_secretbox');
+        }
+        return self::$sodium_available;
     }
 
     /**
@@ -63,7 +71,7 @@ class Insertabot_Security {
      */
     public static function encrypt($data) {
         if (empty($data)) {
-            return $data;
+            return '';
         }
 
         // Use Sodium if available (modern, recommended approach)
@@ -184,7 +192,7 @@ class Insertabot_Security {
             // Remove prefix and decode
             $data = base64_decode(substr($encrypted_data, strlen(self::SODIUM_PREFIX)), true);
 
-            if ($data === false || strlen($data) < SODIUM_CRYPTO_SECRETBOX_NONCEBYTES) {
+            if ($data === false || strlen($data) <= SODIUM_CRYPTO_SECRETBOX_NONCEBYTES) {
                 return false;
             }
 
@@ -226,7 +234,7 @@ class Insertabot_Security {
 
             $iv_length = openssl_cipher_iv_length(self::LEGACY_CIPHER_METHOD);
 
-            if ($iv_length === false || strlen($data) < ($iv_length + 32)) {
+            if ($iv_length === false || strlen($data) <= ($iv_length + 32)) {
                 return false;
             }
 
@@ -273,6 +281,12 @@ class Insertabot_Security {
         if (empty($api_key)) {
             delete_option('insertabot_api_key_encrypted');
             return true;
+        }
+        
+        // Validate API key format before storing
+        $validated = self::validate_api_key($api_key);
+        if (is_wp_error($validated)) {
+            return false;
         }
         
         $encrypted = self::encrypt($api_key);
@@ -397,14 +411,15 @@ class Insertabot_Security {
         
         if ($anonymize && $ip) {
             // Anonymize IP for GDPR compliance
-            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            $is_ipv4 = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4);
+            if ($is_ipv4) {
                 // IPv4: set last octet to 0
                 $parts = explode('.', $ip);
                 if (count($parts) === 4) {
                     $parts[3] = '0';
                     $ip = implode('.', $parts);
                 }
-            } elseif (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            } elseif (!$is_ipv4 && filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
                 // IPv6: set last 80 bits to 0
                 $parts = explode(':', $ip);
                 if (count($parts) >= 6) {
@@ -466,15 +481,16 @@ class Insertabot_Security {
         if (isset($config['primary_color'])) {
             $color = sanitize_text_field($config['primary_color']);
             // Validate hex color format (#RRGGBB)
-            if (preg_match('/^#[a-fA-F0-9]{6}$/', $color)) {
+            if (preg_match('/^#[a-fA-F0-9]{6}$/', $color) === 1) {
                 $sanitized['primary_color'] = $color;
             }
         }
 
         if (isset($config['position'])) {
             $allowed_positions = array('bottom-right', 'bottom-left', 'top-right', 'top-left');
-            $sanitized['position'] = in_array($config['position'], $allowed_positions, true)
-                ? $config['position']
+            $position = is_string($config['position']) ? $config['position'] : '';
+            $sanitized['position'] = in_array($position, $allowed_positions, true)
+                ? $position
                 : 'bottom-right';
         }
 

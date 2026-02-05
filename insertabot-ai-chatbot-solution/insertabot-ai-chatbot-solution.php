@@ -182,6 +182,12 @@ function insertabot_maybe_migrate_plaintext_key() {
     }
 
     $plain = get_option( 'insertabot_api_key', '' );
+    
+    // Skip if no plaintext key exists
+    if ( empty( $plain ) ) {
+        return;
+    }
+
     $existing = Insertabot_Security::get_api_key();
 
     if ( is_string( $plain ) && '' !== $plain && '' === $existing ) {

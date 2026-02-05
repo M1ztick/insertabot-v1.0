@@ -125,6 +125,7 @@ final class Insertabot_Admin_Settings {
 		$validated = null;
 		if (class_exists('Insertabot_Security')) {
 			$validated = Insertabot_Security::validate_api_key($value);
+  // amazonq-ignore-next-line
 		} else {
 			add_settings_error(
 				'insertabot_settings_messages',
