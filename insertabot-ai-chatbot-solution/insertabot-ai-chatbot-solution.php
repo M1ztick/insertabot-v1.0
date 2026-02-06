@@ -35,11 +35,11 @@ $insertabot_required_files = array(
     'includes/privacy.php',
 );
 
-foreach ( $insertabot_required_files as $file ) {
-    if ( file_exists( INSERTABOT_PLUGIN_DIR . $file ) ) {
-        require_once INSERTABOT_PLUGIN_DIR . $file;
+foreach ( $insertabot_required_files as $insertabot_file ) {
+    if ( file_exists( INSERTABOT_PLUGIN_DIR . $insertabot_file ) ) {
+        require_once INSERTABOT_PLUGIN_DIR . $insertabot_file;
     } else {
-        $insertabot_missing_files[] = $file;
+        $insertabot_missing_files[] = $insertabot_file;
     }
 }
 
@@ -50,8 +50,8 @@ if ( ! empty( $insertabot_missing_files ) ) {
             $file_list = implode( ', ', $insertabot_missing_files );
             printf(
                 '<div class="notice notice-error"><p>%s</p></div>',
-                /* translators: %s: comma-separated list of missing file names */
                 sprintf(
+                    /* translators: %s: comma-separated list of missing file names */
                     esc_html__( 'Insertabot: Missing required file(s): %s. Please reinstall the plugin.', 'insertabot-ai-chatbot-solution' ),
                     esc_html( $file_list )
                 )
