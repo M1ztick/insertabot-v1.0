@@ -27,25 +27,38 @@ define('INSERTABOT_API_URL', 'https://api.insertabot.io');
 define('INSERTABOT_WEBSITE_URL', 'https://insertabot.io');
 
 // Load required includes
-if (file_exists(INSERTABOT_PLUGIN_DIR . 'includes/class-security.php')) {
-    require_once INSERTABOT_PLUGIN_DIR . 'includes/class-security.php';
-} else {
-    error_log('Insertabot: Missing required file - class-security.php');
+$insertabot_missing_files = array();
+$insertabot_required_files = array(
+    'includes/class-security.php',
+    'includes/admin-settings.php',
+    'includes/rest.php',
+    'includes/privacy.php',
+);
+
+foreach ( $insertabot_required_files as $file ) {
+    if ( file_exists( INSERTABOT_PLUGIN_DIR . $file ) ) {
+        require_once INSERTABOT_PLUGIN_DIR . $file;
+    } else {
+        $insertabot_missing_files[] = $file;
+    }
 }
-if (file_exists(INSERTABOT_PLUGIN_DIR . 'includes/admin-settings.php')) {
-    require_once INSERTABOT_PLUGIN_DIR . 'includes/admin-settings.php';
-} else {
-    error_log('Insertabot: Missing required file - admin-settings.php');
-}
-if (file_exists(INSERTABOT_PLUGIN_DIR . 'includes/rest.php')) {
-    require_once INSERTABOT_PLUGIN_DIR . 'includes/rest.php';
-} else {
-    error_log('Insertabot: Missing required file - rest.php');
-}
-if (file_exists(INSERTABOT_PLUGIN_DIR . 'includes/privacy.php')) {
-    require_once INSERTABOT_PLUGIN_DIR . 'includes/privacy.php';
-} else {
-    error_log('Insertabot: Missing required file - privacy.php');
+
+if ( ! empty( $insertabot_missing_files ) ) {
+    add_action(
+        'admin_notices',
+        function () use ( $insertabot_missing_files ) {
+            $file_list = implode( ', ', $insertabot_missing_files );
+            printf(
+                '<div class="notice notice-error"><p>%s</p></div>',
+                /* translators: %s: comma-separated list of missing file names */
+                sprintf(
+                    esc_html__( 'Insertabot: Missing required file(s): %s. Please reinstall the plugin.', 'insertabot-ai-chatbot-solution' ),
+                    esc_html( $file_list )
+                )
+            );
+        }
+    );
+    return;
 }
 
 
