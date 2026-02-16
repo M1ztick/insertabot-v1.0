@@ -42,7 +42,6 @@ Add a customizable AI chatbot to your WordPress site. Real-time web search, unli
 **Pro Plan - $9.99/month**
 * Unlimited playground messages
 * 500 embedded messages/month
-* Remove "Powered by Insertabot" branding
 * Priority support
 * Advanced analytics
 
@@ -190,10 +189,6 @@ Absolutely! The chat widget is fully responsive and looks great on all devices.
 
 Unlike ChatGPT which has a knowledge cutoff, Insertabot searches the web in real-time for current information. Your visitors get up-to-date answers.
 
-= Can I remove the branding? =
-
-Yes, with the Pro plan ($9.99/month) you can remove the "Powered by Insertabot" branding.
-
 = How do I upgrade to Pro? =
 
 Visit your [dashboard](https://insertabot.io/dashboard) or click the upgrade link in plugin settings.
@@ -211,7 +206,7 @@ Visit your [dashboard](https://insertabot.io/dashboard) or click the upgrade lin
 = 1.0.0 =
 * Initial release
 * Free plan: 50 messages/day
-* Pro plan: Unlimited playground + 500 embedded messages
+* Pro plan: Unlimited playground messages + 500 embedded messages/month
 * Real-time web search capability
 * Full WordPress integration
 * Mobile-optimized widget

@@ -398,7 +398,6 @@ final class Insertabot_Admin_Settings {
 								<ul>
 									<li><span class="dashicons dashicons-yes"></span> 50 messages/day</li>
 									<li><span class="dashicons dashicons-yes"></span> Basic customization</li>
-									<li><span class="dashicons dashicons-warning"></span> "Powered by Insertabot" branding</li>
 								</ul>
 							</div>
 
@@ -407,7 +406,7 @@ final class Insertabot_Admin_Settings {
 								<ul>
 									<li><span class="dashicons dashicons-star-filled"></span> <strong>Unlimited</strong> playground messages</li>
 									<li><span class="dashicons dashicons-star-filled"></span> <strong>500</strong> embedded messages/month</li>
-									<li><span class="dashicons dashicons-star-filled"></span> <strong>Remove branding</strong></li>
+									<li><span class="dashicons dashicons-star-filled"></span> <strong>Priority support</strong></li>
 							</ul>
 						</div>
 					</div>

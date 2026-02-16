@@ -329,14 +329,13 @@ When selling to B2B customers:
 - Free forever
 - 1,000 messages/day
 - Basic features
-- "Powered by Insertabot" badge
 
 **Pro Tier ($49/month)**
 
 - 10,000 messages/day
 - Full customization
-- Remove branding
 - Priority support
+- Advanced analytics
 - Analytics dashboard
 
 **Enterprise Tier (Custom)**
