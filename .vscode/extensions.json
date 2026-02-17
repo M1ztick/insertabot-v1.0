@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "anthropic.claude-code",
+        "lang2hong.githd",
+        "github.vscode-github-actions",
+        "github.vscode-pull-request-github",
+        "eamodio.gitlens",
+        "esbenp.prettier-vscode"
+    ]
+}

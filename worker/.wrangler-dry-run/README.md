@@ -1,1 +1,0 @@
-This folder contains the built output assets for the worker "insertabot-api" generated at 2026-01-15T23:48:54.186Z.

@@ -10,6 +10,7 @@ lerna-debug.log*
 
 # Wrangler
 .wrangler/
+.wrangler-dry-run/
 .dev.vars
 .mf/
 wrangler.toml.backup
@@ -75,7 +76,20 @@ temp/
 secrets.json
 scripts/ENV
 
+# Backup files
+*.backup
+*.backup.*
+*-backup.*
+*.bak
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# Database backups
+migrations/backups/*.sql
+migrations/backups/*.sql.gz
+
 # Reference files (not for version control)
 QUICK_REFERENCE.txt
-.vscode/extensions.json
-insertabot/.vscode/extensions.json
