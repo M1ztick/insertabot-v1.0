@@ -216,6 +216,208 @@ export function getDashboardHTML(
       font-size: 0.9rem;
       font-weight: 600;
     }
+
+    /* ---------- TABS ---------- */
+
+    .tab-nav {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      border-bottom: none;
+      color: var(--muted);
+      padding: 10px 20px;
+      border-radius: 10px 10px 0 0;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: inherit;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .tab-btn:hover { color: var(--cyan); }
+
+    .tab-btn.active {
+      color: var(--cyan);
+      border-color: var(--border);
+      background: var(--panel);
+      border-bottom: 1px solid var(--bg);
+      margin-bottom: -1px;
+    }
+
+    .tab-panel.hidden { display: none; }
+
+    /* ---------- PLAYGROUND ---------- */
+
+    .pg-layout {
+      display: grid;
+      grid-template-columns: 55% 45%;
+      gap: 20px;
+      height: calc(100vh - 200px);
+      min-height: 500px;
+    }
+
+    @media (max-width: 900px) {
+      .pg-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+    }
+
+    .pg-editor {
+      overflow-y: auto;
+    }
+
+    .pg-editor textarea {
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    .pg-chat {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+      overflow: hidden;
+    }
+
+    .pg-chat-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .pg-chat-header h3 {
+      font-size: 0.95rem;
+      color: var(--cyan);
+      margin: 0;
+    }
+
+    .pg-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .pg-msg {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      word-wrap: break-word;
+      animation: pgSlideIn 0.2s ease-out;
+    }
+
+    @keyframes pgSlideIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .pg-msg.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, var(--cyan), var(--magenta));
+      color: #fff;
+      border-radius: 12px 12px 4px 12px;
+    }
+
+    .pg-msg.assistant {
+      align-self: flex-start;
+      background: rgba(0, 245, 255, 0.08);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 12px 12px 12px 4px;
+    }
+
+    .pg-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      text-align: center;
+      gap: 8px;
+    }
+
+    .pg-empty span { font-size: 2rem; }
+
+    .pg-input-area {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+    }
+
+    .pg-input-area input {
+      flex: 1;
+    }
+
+    .pg-input-area button {
+      background: linear-gradient(135deg, var(--cyan), var(--magenta));
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .pg-input-area button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pg-btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pg-btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      font-family: inherit;
+    }
+
+    .pg-btn-secondary:hover {
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    .pg-btn-test {
+      background: linear-gradient(135deg, #ff00ff, #ff6600);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.85rem;
+      font-family: inherit;
+    }
   </style>
 </head>
 
@@ -232,6 +434,15 @@ export function getDashboardHTML(
   </header>
 
   <div id="toast" class="toast">✅ Settings saved successfully</div>
+
+  ${customer.plan_type === 'owner' ? `
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="settings">Settings</button>
+    <button class="tab-btn" data-tab="playground">Playground</button>
+  </nav>
+  ` : ''}
+
+  <div id="tab-settings" class="tab-panel">
 
   ${escapeHtml(String(customer.email_verified)) === '0' ? `
   <div style="background: linear-gradient(135deg, #ffa500, #ff6b35); color: #fff; padding: 16px; border-radius: 12px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; gap: 16px;">
@@ -369,6 +580,65 @@ export function getDashboardHTML(
       </div>
     </div>
   </section>
+
+  </div><!-- /tab-settings -->
+
+  ${customer.plan_type === 'owner' ? `
+  <div id="tab-playground" class="tab-panel hidden">
+    <div class="pg-layout">
+
+      <div class="pg-editor">
+        <div class="card">
+          <h2>🧪 System Prompt Editor</h2>
+
+          <div class="form-group">
+            <label for="pg-bot-name">Bot Name</label>
+            <input id="pg-bot-name" value="${escapeHtml(widgetConfig.bot_name)}" />
+          </div>
+
+          <div class="form-group">
+            <label for="pg-greeting">Greeting Message</label>
+            <input id="pg-greeting" value="${escapeHtml(widgetConfig.greeting_message)}" />
+          </div>
+
+          <div class="form-group">
+            <label for="pg-system-prompt">System Prompt</label>
+            <textarea id="pg-system-prompt" rows="12">${escapeHtml(widgetConfig.system_prompt)}</textarea>
+          </div>
+
+          <div class="pg-btn-row">
+            <button class="btn" onclick="pgSavePrompt()">Save Changes</button>
+            <button class="pg-btn-test" onclick="pgTestPrompt()">Test (no save)</button>
+            <button class="pg-btn-secondary" onclick="pgResetChat()">Reset Chat</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pg-chat">
+        <div class="pg-chat-header">
+          <h3 id="pg-chat-title">${escapeHtml(widgetConfig.bot_name)}</h3>
+          <span style="font-size: 0.75rem; color: var(--muted);" id="pg-status">Ready</span>
+        </div>
+
+        <div class="pg-messages" id="pg-messages">
+          <div class="pg-empty">
+            <span>💬</span>
+            <p>Start chatting to test your prompt</p>
+          </div>
+        </div>
+
+        <div class="pg-input-area">
+          <form id="pg-chat-form" style="display:flex;gap:10px;width:100%;">
+            <input type="text" id="pg-input" placeholder="Type a message..." autocomplete="off" />
+            <button type="submit" id="pg-send-btn">Send</button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /tab-playground -->
+  ` : ''}
+
 </div>
 
 <script>
@@ -558,6 +828,205 @@ export function getDashboardHTML(
       alert('Failed to save settings');
     }
   });
+
+  // ---------- TAB NAVIGATION ----------
+
+  function showTab(name) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    const panel = document.getElementById('tab-' + name);
+    const btn = document.querySelector('[data-tab="' + name + '"]');
+    if (panel) panel.classList.remove('hidden');
+    if (btn) btn.classList.add('active');
+    window.location.hash = '#' + name;
+  }
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => showTab(btn.dataset.tab));
+  });
+
+  window.addEventListener('hashchange', () => {
+    const name = window.location.hash.slice(1) || 'settings';
+    showTab(name);
+  });
+
+  // Init tabs from hash
+  (function() {
+    const hash = window.location.hash.slice(1);
+    if (hash && document.getElementById('tab-' + hash)) {
+      showTab(hash);
+    }
+  })();
+
+  ${customer.plan_type === 'owner' ? `
+  // ---------- PLAYGROUND ----------
+
+  const PG_API_KEY = ${JSON.stringify(customer.api_key)};
+  const PG_ENDPOINT = ${JSON.stringify(origin)} + '/v1/chat/completions';
+
+  let pgConversationId = null;
+  let pgHistory = [];
+  let pgIsProcessing = false;
+
+  function pgGetSystemPrompt() {
+    return document.getElementById('pg-system-prompt').value;
+  }
+
+  function pgShowEmptyState() {
+    document.getElementById('pg-messages').innerHTML =
+      '<div class="pg-empty"><span>💬</span><p>Start chatting to test your prompt</p></div>';
+  }
+
+  function pgShowToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    setTimeout(() => toast.style.display = 'none', 2500);
+  }
+
+  function pgResetChat() {
+    pgConversationId = crypto.randomUUID();
+    pgHistory = [];
+    pgIsProcessing = false;
+    document.getElementById('pg-input').disabled = false;
+    document.getElementById('pg-send-btn').disabled = false;
+    document.getElementById('pg-status').textContent = 'Ready';
+    pgShowEmptyState();
+  }
+
+  function pgTestPrompt() {
+    pgResetChat();
+    pgShowToast('🧪 Testing with current prompt (not saved)');
+  }
+
+  async function pgSavePrompt() {
+    const res = await fetch('/api/customer/config', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': PG_API_KEY
+      },
+      body: JSON.stringify({
+        system_prompt: pgGetSystemPrompt(),
+        bot_name: document.getElementById('pg-bot-name').value,
+        greeting_message: document.getElementById('pg-greeting').value
+      })
+    });
+    if (res.ok) {
+      pgShowToast('✅ Prompt saved successfully');
+      document.getElementById('pg-chat-title').textContent =
+        document.getElementById('pg-bot-name').value;
+      pgResetChat();
+    } else {
+      pgShowToast('❌ Failed to save');
+    }
+  }
+
+  function pgAddMessage(role, content) {
+    const msgs = document.getElementById('pg-messages');
+    const empty = msgs.querySelector('.pg-empty');
+    if (empty) empty.remove();
+
+    const div = document.createElement('div');
+    div.className = 'pg-msg ' + role;
+    div.textContent = content;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return div;
+  }
+
+  async function pgSendMessage(message) {
+    if (pgIsProcessing || !message.trim()) return;
+    pgIsProcessing = true;
+
+    if (!pgConversationId) pgConversationId = crypto.randomUUID();
+
+    const input = document.getElementById('pg-input');
+    const sendBtn = document.getElementById('pg-send-btn');
+    input.disabled = true;
+    sendBtn.disabled = true;
+    document.getElementById('pg-status').textContent = 'Thinking...';
+
+    pgAddMessage('user', message);
+    pgHistory.push({ role: 'user', content: message });
+
+    try {
+      const res = await fetch(PG_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': PG_API_KEY
+        },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: pgGetSystemPrompt() },
+            ...pgHistory
+          ],
+          stream: true,
+          conversation_id: pgConversationId
+        })
+      });
+
+      if (!res.ok) throw new Error('API error: ' + res.status);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = '';
+      let msgDiv = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') continue;
+            try {
+              const parsed = JSON.parse(data);
+              const token = parsed.choices?.[0]?.delta?.content;
+              if (token) {
+                accumulated += token;
+                if (!msgDiv) {
+                  msgDiv = pgAddMessage('assistant', accumulated);
+                } else {
+                  msgDiv.textContent = accumulated;
+                }
+                document.getElementById('pg-messages').scrollTop =
+                  document.getElementById('pg-messages').scrollHeight;
+              }
+            } catch (e) {}
+          }
+        }
+      }
+
+      pgHistory.push({ role: 'assistant', content: accumulated });
+      document.getElementById('pg-status').textContent = 'Ready';
+    } catch (err) {
+      console.error('Playground error:', err);
+      pgAddMessage('assistant', '⚠️ Error: ' + err.message);
+      document.getElementById('pg-status').textContent = 'Error';
+    } finally {
+      pgIsProcessing = false;
+      input.disabled = false;
+      sendBtn.disabled = false;
+      input.focus();
+    }
+  }
+
+  document.getElementById('pg-chat-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('pg-input');
+    const msg = input.value.trim();
+    if (msg) {
+      input.value = '';
+      pgSendMessage(msg);
+    }
+  });
+  ` : ''}
 </script>
 
 </body>

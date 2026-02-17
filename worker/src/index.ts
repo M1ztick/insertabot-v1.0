@@ -108,6 +108,7 @@ interface ChatRequest {
   temperature?: number;
   max_tokens?: number;
   model?: string;
+  conversation_id?: string;
 }
 
 interface CustomerConfig {
@@ -375,9 +376,65 @@ function getFallbackResponse(widgetConfig: WidgetConfig): string {
   return fallbacks[Math.floor(Math.random() * fallbacks.length)];
 }
 
+const CONVERSATION_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+async function persistConversationData(
+  db: D1Database,
+  customerId: string,
+  conversationId: string,
+  userMessage: string,
+  assistantMessage: string,
+  promptTokens: number,
+  completionTokens: number,
+  responseTimeMs: number,
+  requestId: string,
+  model: string,
+  userIp: string,
+  refererUrl: string
+): Promise<void> {
+  const now = Math.floor(Date.now() / 1000);
+
+  await db.prepare(`
+    INSERT OR IGNORE INTO conversations
+      (conversation_id, customer_id, started_at, last_message_at, message_count)
+    VALUES (?, ?, ?, ?, 0)
+  `).bind(conversationId, customerId, now, now).run();
+
+  await db.prepare(`
+    UPDATE conversations
+    SET last_message_at = ?, message_count = message_count + 2
+    WHERE conversation_id = ?
+  `).bind(now, conversationId).run();
+
+  await db.prepare(`
+    INSERT INTO messages (conversation_id, customer_id, role, content, timestamp)
+    VALUES (?, ?, 'user', ?, ?)
+  `).bind(conversationId, customerId, userMessage, now).run();
+
+  await db.prepare(`
+    INSERT INTO messages (conversation_id, customer_id, role, content, timestamp)
+    VALUES (?, ?, 'assistant', ?, ?)
+  `).bind(conversationId, customerId, assistantMessage, now).run();
+
+  const totalTokens = promptTokens + completionTokens;
+  await db.prepare(`
+    INSERT INTO usage_logs
+      (customer_id, request_id, timestamp, model, prompt_tokens, completion_tokens,
+       total_tokens, response_time_ms, status_code, estimated_cost_usd,
+       user_ip, referer_url)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 200, ?, ?, ?)
+  `).bind(
+    customerId, requestId, now, model,
+    promptTokens, completionTokens, totalTokens,
+    responseTimeMs, (totalTokens / 1000) * 0.00019,
+    userIp, refererUrl
+  ).run();
+}
+
 async function handleChatRequest(
   request: Request,
   env: Env,
+  ctx: ExecutionContext,
   customerId: string,
   customerConfig: CustomerConfig,
   widgetConfig: WidgetConfig,
@@ -392,6 +449,13 @@ async function handleChatRequest(
     if (!chatRequest.messages || !Array.isArray(chatRequest.messages)) {
       throw new ValidationError('Invalid request: messages array required');
     }
+
+    // Extract optional conversation_id for playground persistence
+    const rawConvId = (chatRequest.conversation_id || '').trim();
+    const conversationId = CONVERSATION_ID_RE.test(rawConvId) ? rawConvId : null;
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const userIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const refererUrl = request.headers.get('Referer') || '';
 
     const userMessage = chatRequest.messages[chatRequest.messages.length - 1];
     validateChatMessage(userMessage?.content);
@@ -558,7 +622,7 @@ async function handleChatRequest(
         },
       });
 
-      return new Response(stream, {
+      const streamResponse = new Response(stream, {
         status: 200,
         headers: {
           "Content-Type": "text/event-stream",
@@ -568,9 +632,45 @@ async function handleChatRequest(
           ...SECURITY_HEADERS,
         },
       });
+
+      // Fire-and-forget persistence for playground conversations
+      if (conversationId) {
+        const promptTokens = messages.reduce(
+          (acc: number, m: ChatMessage) => acc + extractTextFromMessage(m.content).split(/\s+/).length, 0
+        );
+        const completionTokens = responseText.split(/\s+/).length;
+
+        ctx.waitUntil(
+          persistConversationData(
+            env.DB, customerId, conversationId,
+            textContent, responseText,
+            promptTokens, completionTokens, Date.now() - startTime,
+            requestId, widgetConfig.model,
+            userIp, refererUrl
+          ).catch((err: any) => logger.error("Persistence failed", { error: String(err) }))
+        );
+      }
+
+      return streamResponse;
     }
 
     const responseTime = Date.now() - startTime;
+
+    // Persist playground conversations (non-streaming)
+    if (conversationId) {
+      const promptTokens = messages.reduce(
+        (acc: number, m: ChatMessage) => acc + extractTextFromMessage(m.content).split(/\s+/).length, 0
+      );
+      const completionTokens = responseText.split(/\s+/).length;
+
+      await persistConversationData(
+        env.DB, customerId, conversationId,
+        textContent, responseText,
+        promptTokens, completionTokens, responseTime,
+        requestId, widgetConfig.model,
+        userIp, refererUrl
+      ).catch((err: any) => logger.error("Persistence failed", { error: String(err) }));
+    }
 
     await logger.info("Chat request processed", {
       customerId,
@@ -1164,9 +1264,12 @@ export default {
       const customerConfig = await getCustomerConfig(env.DB, apiKey);
       const widgetConfig = await getWidgetConfig(env.DB, customerConfig.customer_id);
 
-      const originAllowed = isOriginAllowed(origin, widgetConfig.allowed_domains);
+      // Allow requests from the Worker's own origin (e.g. dashboard playground)
+      const globalOrigins = env.CORS_ORIGINS.split(',').map((o: string) => o.trim());
+      const isOwnOrigin = globalOrigins.includes('*') || globalOrigins.includes(origin);
+      const originAllowed = isOwnOrigin || isOriginAllowed(origin, widgetConfig.allowed_domains);
       const corsHeaders = createCorsHeaders(origin, originAllowed);
-      
+
       if (!originAllowed && origin) {
         await logger.warn("Blocked origin attempt", {
           origin,
@@ -1193,6 +1296,7 @@ export default {
         return handleChatRequest(
           request,
           env,
+          ctx,
           customerConfig.customer_id,
           customerConfig,
           widgetConfig,
