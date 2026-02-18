@@ -388,6 +388,46 @@ export function getDashboardHTML(
     }
     .pg-msg.assistant strong { font-weight: 700; }
     .pg-msg.assistant em { font-style: italic; }
+    .pg-msg.assistant .ib-code-wrap {
+      position: relative;
+      margin: 8px 0;
+    }
+    .pg-msg.assistant .ib-code-wrap .ib-code-block {
+      margin: 0;
+    }
+    .pg-msg.assistant .ib-copy-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(0,245,255,0.1);
+      color: var(--cyan);
+      border: 1px solid rgba(0,245,255,0.3);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      line-height: 1.4;
+      transition: background 0.15s;
+    }
+    .pg-msg.assistant .ib-copy-btn:hover {
+      background: rgba(0,245,255,0.2);
+    }
+    .pg-msg.assistant .ib-msg-copy-btn {
+      display: block;
+      margin-top: 10px;
+      background: none;
+      border: none;
+      color: rgba(0,245,255,0.35);
+      font-size: 11px;
+      cursor: pointer;
+      padding: 0;
+      font-family: inherit;
+      transition: color 0.15s;
+    }
+    .pg-msg.assistant .ib-msg-copy-btn:hover {
+      color: var(--cyan);
+    }
 
     .pg-empty {
       flex: 1;
@@ -980,7 +1020,7 @@ export function getDashboardHTML(
     // Note: backslashes doubled because this runs inside a TS template literal
     var s = text.replace(/\`\`\`(\\w*)\\n([\\s\\S]*?)\`\`\`/g, function(_, lang, code) {
       var lc = lang ? ' class="language-' + esc(lang) + '"' : '';
-      codeBlocks.push('<pre class="ib-code-block"><code' + lc + '>' + esc(code.trimEnd()) + '</code></pre>');
+      codeBlocks.push('<div class="ib-code-wrap"><button class="ib-copy-btn">Copy</button><pre class="ib-code-block"><code' + lc + '>' + esc(code.trimEnd()) + '</code></pre></div>');
       return 'IBCB' + (codeBlocks.length - 1) + 'IBCBEND';
     });
     // 2. Extract inline code spans
@@ -1104,6 +1144,42 @@ export function getDashboardHTML(
       pgHistory.push({ role: 'assistant', content: accumulated });
       if (msgDiv) {
         msgDiv.innerHTML = renderMarkdown(accumulated);
+        // Code block copy buttons
+        msgDiv.querySelectorAll('.ib-copy-btn').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            var code = btn.parentElement.querySelector('code').textContent;
+            navigator.clipboard.writeText(code).then(function() {
+              btn.textContent = 'Copied!';
+              setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+            }).catch(function() {
+              var ta = document.createElement('textarea');
+              ta.value = code; document.body.appendChild(ta); ta.select();
+              try { document.execCommand('copy'); } catch(e) {}
+              document.body.removeChild(ta);
+              btn.textContent = 'Copied!';
+              setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+            });
+          });
+        });
+        // Message-level copy button
+        var pgAccum = accumulated;
+        var pgMsgCopy = document.createElement('button');
+        pgMsgCopy.className = 'ib-msg-copy-btn';
+        pgMsgCopy.textContent = 'Copy response';
+        pgMsgCopy.addEventListener('click', function() {
+          navigator.clipboard.writeText(pgAccum).then(function() {
+            pgMsgCopy.textContent = 'Copied!';
+            setTimeout(function() { pgMsgCopy.textContent = 'Copy response'; }, 2000);
+          }).catch(function() {
+            var ta = document.createElement('textarea');
+            ta.value = pgAccum; document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); } catch(e) {}
+            document.body.removeChild(ta);
+            pgMsgCopy.textContent = 'Copied!';
+            setTimeout(function() { pgMsgCopy.textContent = 'Copy response'; }, 2000);
+          });
+        });
+        msgDiv.appendChild(pgMsgCopy);
         document.getElementById('pg-messages').scrollTop = document.getElementById('pg-messages').scrollHeight;
       }
       document.getElementById('pg-status').textContent = 'Ready';

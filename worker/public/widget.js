@@ -467,6 +467,47 @@
       }
       .insertabot-message-content strong { font-weight: 700; }
       .insertabot-message-content em { font-style: italic; }
+      .insertabot-message-content .ib-code-wrap {
+        position: relative;
+        margin: 8px 0;
+      }
+      .insertabot-message-content .ib-code-wrap .ib-code-block {
+        margin: 0;
+      }
+      .insertabot-message-content .ib-copy-btn {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        background: rgba(255,255,255,0.1);
+        color: #e6edf3;
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 4px;
+        padding: 2px 8px;
+        font-size: 11px;
+        cursor: pointer;
+        font-family: 'SFMono-Regular', Consolas, monospace;
+        line-height: 1.4;
+        transition: background 0.15s;
+        z-index: 1;
+      }
+      .insertabot-message-content .ib-copy-btn:hover {
+        background: rgba(255,255,255,0.2);
+      }
+      .insertabot-message-content .ib-msg-copy-btn {
+        display: block;
+        margin-top: 10px;
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.4);
+        font-size: 11px;
+        cursor: pointer;
+        padding: 0;
+        font-family: inherit;
+        transition: color 0.15s;
+      }
+      .insertabot-message-content .ib-msg-copy-btn:hover {
+        color: rgba(255,255,255,0.85);
+      }
     `;
     document.head.appendChild(style);
 
@@ -515,7 +556,7 @@
     // 1. Extract fenced code blocks (content escaped at extraction time)
     var s = text.replace(/```(\w*)\n([\s\S]*?)```/g, function(_, lang, code) {
       var lc = lang ? ' class="language-' + esc(lang) + '"' : '';
-      codeBlocks.push('<pre class="ib-code-block"><code' + lc + '>' + esc(code.trimEnd()) + '</code></pre>');
+      codeBlocks.push('<div class="ib-code-wrap"><button class="ib-copy-btn">Copy</button><pre class="ib-code-block"><code' + lc + '>' + esc(code.trimEnd()) + '</code></pre></div>');
       return '\x00CB' + (codeBlocks.length - 1) + '\x00';
     });
     // 2. Extract inline code spans
@@ -562,6 +603,41 @@
     var contentDiv = messageDiv.querySelector('.insertabot-message-content');
     if (contentDiv) {
       contentDiv.innerHTML = renderMarkdown(content);
+      // Code block copy buttons
+      contentDiv.querySelectorAll('.ib-copy-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var code = btn.parentElement.querySelector('code').textContent;
+          navigator.clipboard.writeText(code).then(function() {
+            btn.textContent = 'Copied!';
+            setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+          }).catch(function() {
+            var ta = document.createElement('textarea');
+            ta.value = code; document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); } catch(e) {}
+            document.body.removeChild(ta);
+            btn.textContent = 'Copied!';
+            setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+          });
+        });
+      });
+      // Message-level copy button
+      var msgCopy = document.createElement('button');
+      msgCopy.className = 'ib-msg-copy-btn';
+      msgCopy.textContent = 'Copy response';
+      msgCopy.addEventListener('click', function() {
+        navigator.clipboard.writeText(content).then(function() {
+          msgCopy.textContent = 'Copied!';
+          setTimeout(function() { msgCopy.textContent = 'Copy response'; }, 2000);
+        }).catch(function() {
+          var ta = document.createElement('textarea');
+          ta.value = content; document.body.appendChild(ta); ta.select();
+          try { document.execCommand('copy'); } catch(e) {}
+          document.body.removeChild(ta);
+          msgCopy.textContent = 'Copied!';
+          setTimeout(function() { msgCopy.textContent = 'Copy response'; }, 2000);
+        });
+      });
+      contentDiv.appendChild(msgCopy);
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
   }
