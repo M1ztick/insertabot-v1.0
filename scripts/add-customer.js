@@ -75,7 +75,7 @@ INSERT INTO widget_configs (
 ) VALUES (
   '${customerId}', '#6366f1', 'bottom-right', 'Hi! How can I help you today?',
   'Assistant', NULL, NULL, 'Type your message...', 1,
-  'llama-3-8b', 0.7, 500, 'You are a helpful customer service assistant.',
+  'llama-3.3-70b', 0.7, 500, 'You are a helpful customer service assistant.',
   NULL, unixepoch(), unixepoch()
 );`;
     

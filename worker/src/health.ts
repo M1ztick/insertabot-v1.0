@@ -181,7 +181,7 @@ export class HealthMonitor {
         name: 'ai-service',
         check: async () => {
           try {
-            const result = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+            const result = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
               messages: [{ role: 'user', content: 'test' }],
               max_tokens: 1
             });

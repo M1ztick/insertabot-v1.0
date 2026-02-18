@@ -39,7 +39,7 @@ Short, actionable guidance so an AI coding agent becomes productive quickly in t
 - Never log full API keys: use `sanitizeForLog()` (worker) or `Insertabot_Security::hash_api_key_for_log()` (WP) when logging keys.
 - Rate limiting keys: `ratelimit:<customerId>:hour:<hourIndex>` and `ratelimit:<customerId>:day:<dayIndex>` (see `checkRateLimit` in `worker/src/index.ts`).
 - RAG/embeddings: embeddings stored with `embedding_id` (see `schema.sql`); Vectorize index is `insertabot-embeddings` by convention.
-- AI binding: Cloudflare Workers AI used via `env.AI.run(...)` (model example: `@cf/meta/llama-3.1-8b-instruct`).
+- AI binding: Cloudflare Workers AI used via `env.AI.run(...)` (model: `@cf/meta/llama-3.3-70b-instruct-fp8-fast`).
 - Validation/size limits: request bodies limited to 10MB (`MAX_REQUEST_SIZE`), chat messages limited to 10k chars and max 50 messages (see `validation.ts`).
 - Security & privacy: WP plugin anonymizes IPs and encrypts API keys using WordPress salts — follow existing patterns for compliance.
 

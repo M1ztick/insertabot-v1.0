@@ -529,7 +529,7 @@ async function handleChatRequest(
     // AI model call with timeout and retry
     const aiResponse = await withRetry(
       () => withTimeout(
-        () => env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+        () => env.AI.run("@cf/meta/llama-3.3-70b-instruct-fp8-fast", {
           messages: messages.map((m) => ({
             role: m.role,
             content: m.content,

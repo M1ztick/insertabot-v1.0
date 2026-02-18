@@ -22,7 +22,7 @@ INSERT INTO widget_configs (
   'Hi! I''m Insertabot. Ask me anything about our chatbot platform!',
   'Insertabot',
   NULL,
-  '@cf/meta/llama-3.1-8b-instruct',
+  '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
   0.7,
   500,
   'You are Insertabot, an AI assistant for the Insertabot platform. Help users understand how to embed AI chatbots on their websites. Be friendly, helpful, and concise.',

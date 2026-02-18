@@ -85,7 +85,7 @@ INSERT INTO widget_configs (
   'Hi! How can I help you today?',
   'Insertabot',
   NULL,
-  '@cf/meta/llama-3.1-8b-instruct',
+  '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
   0.7,
   500,
   'You are a helpful AI assistant.',

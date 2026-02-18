@@ -71,7 +71,7 @@ INSERT INTO widget_configs (
     NULL,                                   -- No initial message
     'Type your message...',                 -- Input placeholder
     1,                                      -- Show Insertabot branding
-    'llama-3-8b',                          -- AI model
+    'llama-3.3-70b',                       -- AI model
     0.7,                                   -- Temperature
     500,                                   -- Max tokens
     'You are a helpful customer service assistant.', -- System prompt

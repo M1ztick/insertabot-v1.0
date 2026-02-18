@@ -32,7 +32,7 @@ INSERT INTO widget_configs (
 ) VALUES (
   '${customerId}', '#3b82f6', 'bottom-right', 'Hi! How can I help you today?',
   'Mistyk Assistant', NULL, NULL, 'Ask me anything...', 0,
-  'llama-3.1-8b', 0.7, 800, 'You are a helpful assistant for Mistyk Media. Be friendly, professional, and knowledgeable about web development, AI, and digital marketing.',
+  'llama-3.3-70b', 0.7, 800, 'You are a helpful assistant for Mistyk Media. Be friendly, professional, and knowledgeable about web development, AI, and digital marketing.',
   'mistykmedia.com', unixepoch(), unixepoch()
 );`;
 

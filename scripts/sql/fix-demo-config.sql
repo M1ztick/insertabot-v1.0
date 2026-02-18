@@ -22,7 +22,7 @@ INSERT INTO widget_configs (
   'Hi! I''m the Insertabot demo. Ask me anything!',
   'Insertabot Demo',
   NULL,
-  '@cf/meta/llama-3.1-8b-instruct',
+  '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
   0.7,
   500,
   'You are Insertabot, a helpful AI assistant demonstrating the capabilities of the Insertabot platform. Be friendly, concise, and helpful.',
