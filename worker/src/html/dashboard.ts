@@ -977,45 +977,46 @@ export function getDashboardHTML(
     }
     var codeBlocks = [], inlineCodes = [];
     // 1. Extract fenced code blocks (content escaped at extraction time)
-    var s = text.replace(/\`\`\`(\w*)\n([\s\S]*?)\`\`\`/g, function(_, lang, code) {
+    // Note: backslashes doubled because this runs inside a TS template literal
+    var s = text.replace(/\`\`\`(\\w*)\\n([\\s\\S]*?)\`\`\`/g, function(_, lang, code) {
       var lc = lang ? ' class="language-' + esc(lang) + '"' : '';
       codeBlocks.push('<pre class="ib-code-block"><code' + lc + '>' + esc(code.trimEnd()) + '</code></pre>');
-      return '\x00CB' + (codeBlocks.length - 1) + '\x00';
+      return 'IBCB' + (codeBlocks.length - 1) + 'IBCBEND';
     });
     // 2. Extract inline code spans
-    s = s.replace(/\`([^\`\n]+)\`/g, function(_, code) {
+    s = s.replace(/\`([^\`\\n]+)\`/g, function(_, code) {
       inlineCodes.push('<code class="ib-inline-code">' + esc(code) + '</code>');
-      return '\x00IC' + (inlineCodes.length - 1) + '\x00';
+      return 'IBIC' + (inlineCodes.length - 1) + 'IBICEND';
     });
     // 3. Escape all remaining plain text
     s = esc(s);
     // 4. Bold and italic (markers survive esc() — not HTML-special)
-    s = s.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\\*\\*\\*(.+?)\\*\\*\\*/g, '<strong><em>$1</em></strong>');
+    s = s.replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>');
     s = s.replace(/__(.+?)__/g, '<strong>$1</strong>');
-    s = s.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
-    s = s.replace(/_([^_\n]+)_/g, '<em>$1</em>');
+    s = s.replace(/\\*([^*\\n]+)\\*/g, '<em>$1</em>');
+    s = s.replace(/_([^_\\n]+)_/g, '<em>$1</em>');
     // 5. Unordered lists
-    s = s.replace(/((?:^[ \t]*[-*] .+(?:\n|$))+)/gm, function(block) {
-      return '<ul class="ib-list">' + block.trim().split('\n').map(function(l) {
-        return '<li>' + l.replace(/^[ \t]*[-*] /, '').trim() + '</li>';
+    s = s.replace(/((?:^[ \\t]*[-*] .+(?:\\n|$))+)/gm, function(block) {
+      return '<ul class="ib-list">' + block.trim().split('\\n').map(function(l) {
+        return '<li>' + l.replace(/^[ \\t]*[-*] /, '').trim() + '</li>';
       }).join('') + '</ul>';
     });
     // 6. Ordered lists
-    s = s.replace(/((?:^[ \t]*\d+\. .+(?:\n|$))+)/gm, function(block) {
-      return '<ol class="ib-list">' + block.trim().split('\n').map(function(l) {
-        return '<li>' + l.replace(/^[ \t]*\d+\. /, '').trim() + '</li>';
+    s = s.replace(/((?:^[ \\t]*\\d+\\. .+(?:\\n|$))+)/gm, function(block) {
+      return '<ol class="ib-list">' + block.trim().split('\\n').map(function(l) {
+        return '<li>' + l.replace(/^[ \\t]*\\d+\\. /, '').trim() + '</li>';
       }).join('') + '</ol>';
     });
-    // 7. Paragraphs and line breaks
-    s = s.split(/\n\n+/).map(function(para) {
+    // 7. Paragraphs and line breaks (skip block-level elements and code placeholders)
+    s = s.split(/\\n\\n+/).map(function(para) {
       var t = para.trim();
-      if (/^<(ul|ol|pre)/.test(t)) return t;
-      return '<p>' + t.replace(/\n/g, '<br>') + '</p>';
-    }).join('\n');
+      if (/^<(ul|ol|pre)/.test(t) || /^IBCB\\d/.test(t)) return t;
+      return '<p>' + t.replace(/\\n/g, '<br>') + '</p>';
+    }).join('\\n');
     // 8. Restore placeholders
-    s = s.replace(/\x00IC(\d+)\x00/g, function(_, i) { return inlineCodes[+i]; });
-    s = s.replace(/\x00CB(\d+)\x00/g, function(_, i) { return codeBlocks[+i]; });
+    s = s.replace(/IBIC(\\d+)IBICEND/g, function(_, i) { return inlineCodes[+i]; });
+    s = s.replace(/IBCB(\\d+)IBCBEND/g, function(_, i) { return codeBlocks[+i]; });
     return s;
   }
 
