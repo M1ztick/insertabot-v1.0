@@ -123,8 +123,10 @@ The plugin implements WordPress personal data exporters and erasers. Site admini
 
 Need help? We're here for you:
 
+* **Insertabot Chat** – The fastest way to get help! Visit [insertabot.io](https://insertabot.io) and ask our AI assistant directly in the chat widget. Already signed up? Use the **Playground** tab in your [dashboard](https://insertabot.io/dashboard) for guided, real-time assistance.
 * [Documentation](https://insertabot.io/docs)
 * [Dashboard](https://insertabot.io/dashboard)
+* WordPress.org support forum
 * Email: support@insertabot.io
 
 ###  Get Started Free
