@@ -1221,7 +1221,7 @@ export default {
           });
         }
 
-        if (url.pathname === "/health" && request.method === "GET") {
+        if (url.pathname === "/health" && (request.method === "GET" || request.method === "HEAD")) {
           const response = await handleHealthCheck(env);
           const responseHeaders: Record<string, string> = {};
           response.headers.forEach((value, key) => {
