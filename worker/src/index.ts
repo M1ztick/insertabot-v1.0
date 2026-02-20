@@ -519,7 +519,8 @@ async function handleChatRequest(
     const messages: ChatMessage[] = [
       {
         role: "system",
-        content: widgetConfig.system_prompt + ragContext + searchContext,
+        content: widgetConfig.system_prompt + ragContext + searchContext
+          + "\n\nRESPONSE RULES: Be concise and direct. Answer in 1-3 sentences for simple questions. Only use a list when listing genuinely distinct items — never to pad a response. Do not ask follow-up questions unless the user's request is truly ambiguous. Do not use markdown symbols (*, **, #, -).",
       },
       ...chatRequest.messages,
     ];
