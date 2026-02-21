@@ -1,0 +1,134 @@
+// insertabot-api — Cloudflare Workers Configuration
+// Migrated from wrangler.toml to wrangler.jsonc
+// Last updated: 2026-02-21
+{
+  "name": "insertabot-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-03-07",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Static assets (public directory)
+  "assets": {
+    "directory": "./public"
+  },
+
+  // Smart placement — lets Cloudflare run the Worker closer to your backend
+  // services (D1, etc.) rather than always closest to the user
+  "placement": {
+    "mode": "smart"
+  },
+
+  // Observability — 10% sampling in production to manage costs
+  // while still capturing meaningful signal
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.1
+  },
+
+  // Routes — source of truth; do not configure these via the Dashboard
+  // to avoid config drift on future deploys
+  "routes": [
+    {
+      "pattern": "insertabot.io",
+      "zone_name": "insertabot.io",
+      "custom_domain": true
+    },
+    {
+      "pattern": "insertabot.io/api/*",
+      "zone_name": "insertabot.io"
+    },
+    {
+      "pattern": "insertabot.io/*",
+      "zone_name": "insertabot.io"
+    }
+  ],
+
+  // D1 — production relational database
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "insertabot-production",
+      "database_id": "3d7d004d-ed6c-486c-a51e-a59f51bcd307"
+    }
+  ],
+
+  // KV — rate limiting store
+  "kv_namespaces": [
+    {
+      "binding": "RATE_LIMITER",
+      "id": "5f08c9439c594be69c44c69a8c7aa280"
+    }
+  ],
+
+  // Vectorize — embeddings index for RAG
+  "vectorize": [
+    {
+      "binding": "VECTORIZE",
+      "index_name": "insertabot-embeddings"
+    }
+  ],
+
+  // Analytics Engine — explicit dataset name prevents dashboard drift
+  "analytics_engine_datasets": [
+    {
+      "binding": "ANALYTICS",
+      "dataset": "ANALYTICS"
+    }
+  ],
+
+  // Workers AI binding
+  "ai": {
+    "binding": "AI"
+  },
+
+  // Environment variables
+  // NOTE: Do NOT add secrets here. Manage secrets via:
+  //   wrangler secret put STRIPE_SECRET_KEY
+  //   wrangler secret put STRIPE_WEBHOOK_SECRET
+  //   wrangler secret put STRIPE_PRO_PRICE_ID
+  //   wrangler secret put TAVILY_API_KEY
+  "vars": {
+    "ENVIRONMENT": "production",
+    "CORS_ORIGINS": "https://insertabot.io"
+    // STRIPE_PUBLISHABLE_KEY is a publishable (non-secret) key but is omitted
+    // here intentionally to keep it out of version control. Set it via:
+    //   wrangler secret put STRIPE_PUBLISHABLE_KEY
+    // (Secrets are fine for publishable keys and keeps the config clean)
+  },
+
+  // ============================================================================
+  // DEVELOPMENT ENVIRONMENT (REFERENCE ONLY — DO NOT DEPLOY)
+  // ============================================================================
+  // Kept as a reference and failsafe. Do not use --env=development in deploys.
+  // ============================================================================
+  "env": {
+    "development": {
+      "name": "insertabot-api-dev",
+
+      "observability": {
+        "enabled": true,
+        "head_sampling_rate": 1 // 100% sampling in dev for full visibility
+      },
+
+      "vars": {
+        "ENVIRONMENT": "development",
+        "CORS_ORIGINS": "localhost:3000,localhost:5173,127.0.0.1:3000"
+      },
+
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "insertabot-development",
+          "database_id": "551c3e86-cbf6-4217-8617-20d60085a7f1"
+        }
+      ],
+
+      "kv_namespaces": [
+        {
+          "binding": "RATE_LIMITER",
+          "id": "3ff9aad75a3443709196fc824f40a4d2"
+        }
+      ]
+    }
+  }
+}
