@@ -5,9 +5,9 @@
   "scripts": {
     "dev": "node scripts/dev-server.js",
     "dev:port": "node scripts/dev-server.js --port",
-    "dev:worker": "wrangler dev --config worker/wrangler.jsonc",
-    "deploy": "wrangler deploy --config worker/wrangler.jsonc",
-    "deploy:production": "wrangler deploy --config worker/wrangler.jsonc",
+    "dev:worker": "wrangler dev --config worker/wrangler.jsonc --env=\"\"",
+    "deploy": "wrangler deploy --config worker/wrangler.jsonc --env=\"\"",
+    "deploy:production": "wrangler deploy --config worker/wrangler.jsonc --env=\"\"",
     "deploy:dev": "echo '⚠️  Development deployments are archived. Use npm run deploy for production only.' && exit 1",
     "test": "node scripts/dev-server.js --port 8080",
     "prepare": "husky install || true",

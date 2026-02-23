@@ -25,6 +25,10 @@
     "head_sampling_rate": 0.1
   },
 
+  // Disable workers.dev subdomain and preview URLs — production uses custom domains only
+  "workers_dev": false,
+  "preview_urls": false,
+
   // Routes — source of truth; do not configure these via the Dashboard
   // to avoid config drift on future deploys
   "routes": [
