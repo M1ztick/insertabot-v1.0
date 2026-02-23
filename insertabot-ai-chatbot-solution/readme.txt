@@ -3,7 +3,7 @@ Contributors: m1styk
 Tags: chatbot, ai, chat, support, customer service
 Requires at least: 5.9
 Tested up to: 6.9
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -204,6 +204,9 @@ Visit your [dashboard](https://insertabot.io/dashboard) or click the upgrade lin
 5. Real-time web search in action
 
 == Changelog ==
+
+= 1.0.1 =
+* Updated free tier messaging to accurately reflect 20 messages per day limit
 
 = 1.0.0 =
 * Initial release
