@@ -23,6 +23,9 @@
   ],
   "author": "Mistyk Media",
   "license": "GNU-v2",
+  "dependencies": {
+    "zod": "^3.22.3"
+  },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260103.0",
     "@secretlint/secretlint-rule-preset-recommend": "^11.2.5",
