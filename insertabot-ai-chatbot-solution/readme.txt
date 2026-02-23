@@ -20,7 +20,7 @@ Add a customizable AI chatbot to your WordPress site. Real-time web search, unli
 * **Lightning Fast Setup** - Install plugin, add API key, done! Takes under 5 minutes
 * **Fully Customizable** - Match your brand colors, greeting message, and bot personality
 * **Mobile Optimized** - Beautiful chat experience on all devices
-* **Free to Start** - 50 messages per day, no credit card required
+* **Free to Start** - 20 messages per day, no credit card required
 
 ###  Key Features
 
@@ -34,7 +34,7 @@ Add a customizable AI chatbot to your WordPress site. Real-time web search, unli
 ###  Pricing
 
 **Free Plan**
-* 50 messages per day
+* 20 messages per day
 * Real-time web search
 * Basic customization
 * Mobile-optimized widget
@@ -131,7 +131,7 @@ Need help? We're here for you:
 
 ###  Get Started Free
 
-No credit card required. 50 messages per day included.
+No credit card required. 20 messages per day included.
 
 [Sign up now →](https://insertabot.io/signup)
 
@@ -161,7 +161,7 @@ No credit card required. 50 messages per day included.
 
 = Do I need a credit card to start? =
 
-No! The free plan includes 50 messages per day with no credit card required.
+No! The free plan includes 20 messages per day with no credit card required.
 
 = How do I get an API key? =
 
@@ -175,7 +175,7 @@ Yes! Customize colors, greeting message, bot name, and more in your [dashboard](
 
 No. The script loads asynchronously and is hosted on a fast CDN. Your site speed won't be affected.
 
-= What if I exceed 50 messages per day? =
+= What if I exceed 20 messages per day? =
 
 The free plan resets daily at midnight. For unlimited messages, upgrade to Pro for $9.99/month.
 
@@ -207,7 +207,7 @@ Visit your [dashboard](https://insertabot.io/dashboard) or click the upgrade lin
 
 = 1.0.0 =
 * Initial release
-* Free plan: 50 messages/day
+* Free plan: 20 messages/day
 * Pro plan: Unlimited playground messages + 500 embedded messages/month
 * Real-time web search capability
 * Full WordPress integration

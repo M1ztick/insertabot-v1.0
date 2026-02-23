@@ -329,7 +329,7 @@ final class Insertabot_Admin_Settings {
 								<div class="insertabot-step-number">1</div>
 								<div class="insertabot-step-content">
 									<h3>Get Free API Key</h3>
-									<p>Sign up and get <strong>50 free messages per day</strong></p>
+									<p>Sign up and get <strong>20 free messages per day</strong></p>
 									<?php if ($signup) : ?>
 										<a href="<?php echo esc_url($signup); ?>" class="button button-primary button-hero" target="_blank" rel="noopener noreferrer">
 											Get Free API Key →
@@ -358,7 +358,7 @@ final class Insertabot_Admin_Settings {
 						<div class="insertabot-features">
 							<h3><span class="dashicons dashicons-star-filled" style="font-size: 1.2em; vertical-align: middle;"></span> What Free Tier Includes:</h3>
 							<ul>
-								<li><span class="dashicons dashicons-admin-users"></span> <strong>50 AI conversations per day</strong></li>
+								<li><span class="dashicons dashicons-admin-users"></span> <strong>20 AI conversations per day</strong></li>
 								<li><span class="dashicons dashicons-search"></span> <strong>Real-time web search</strong></li>
 								<li><span class="dashicons dashicons-art"></span> Customizable colors and branding</li>
 								<li><span class="dashicons dashicons-smartphone"></span> Mobile-friendly chat widget</li>
@@ -396,7 +396,7 @@ final class Insertabot_Admin_Settings {
 							<div class="insertabot-upgrade-col">
 								<h3>Free (Current)</h3>
 								<ul>
-									<li><span class="dashicons dashicons-yes"></span> 50 messages/day</li>
+									<li><span class="dashicons dashicons-yes"></span> 20 messages/day</li>
 									<li><span class="dashicons dashicons-yes"></span> Basic customization</li>
 								</ul>
 							</div>
