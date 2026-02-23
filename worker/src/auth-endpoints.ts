@@ -77,9 +77,9 @@ export async function handleSetPassword(
           "SELECT customer_id, password_hash FROM customers WHERE email = ?"
         )
         .bind(request.email)
-        .first<{ customer_id: string; password_hash: string | null }>(),
+        .first(),
     "getCustomerForPasswordSet"
-  );
+  ) as { customer_id: string; password_hash: string | null } | null;
 
   if (!customer) {
     throw new AuthenticationError(
@@ -162,20 +162,20 @@ export async function handleLogin(
 				 FROM customers WHERE email = ? AND status = 'active'`
         )
         .bind(request.email)
-        .first<{
-          customer_id: string;
-          email: string;
-          password_hash: string | null;
-          password_salt: string | null;
-          totp_enabled: number;
-          totp_secret: string | null;
-          backup_codes: string | null;
-          failed_login_attempts: number;
-          account_locked_until: number | null;
-          email_verified: number;
-        }>(),
+        .first(),
     "getCustomerForLogin"
-  );
+  ) as {
+    customer_id: string;
+    email: string;
+    password_hash: string | null;
+    password_salt: string | null;
+    totp_enabled: number;
+    totp_secret: string | null;
+    backup_codes: string | null;
+    failed_login_attempts: number;
+    account_locked_until: number | null;
+    email_verified: number;
+  } | null;
 
   if (!customer) {
     // Generic error message to prevent user enumeration attacks
@@ -470,9 +470,9 @@ export async function handleChangePassword(
           "SELECT password_hash, password_salt FROM customers WHERE customer_id = ?"
         )
         .bind(customerId)
-        .first<{ password_hash: string; password_salt: string }>(),
+        .first(),
     "getPasswordForChange"
-  );
+  ) as { password_hash: string; password_salt: string } | null;
 
   if (!customer) {
     // amazonq-ignore-next-line
@@ -562,9 +562,9 @@ export async function handleDisable2FA(
           "SELECT password_hash, password_salt FROM customers WHERE customer_id = ?"
         )
         .bind(customerId)
-        .first<{ password_hash: string; password_salt: string }>(),
+        .first(),
     "getPasswordForDisable2FA"
-  );
+  ) as { password_hash: string; password_salt: string } | null;
 
   if (!customer) {
     // amazonq-ignore-next-line
@@ -626,9 +626,9 @@ export async function handlePasswordResetRequest(
       db
         .prepare("SELECT customer_id FROM customers WHERE email = ?")
         .bind(email)
-        .first<{ customer_id: string }>(),
+        .first(),
     "getCustomerForReset"
-  );
+  ) as { customer_id: string } | null;
 
   // Always return success to prevent email enumeration
   if (!customer) {
@@ -708,9 +708,9 @@ export async function handlePasswordReset(
           "SELECT customer_id, password_reset_expires FROM customers WHERE password_reset_token = ?"
         )
         .bind(request.token)
-        .first<{ customer_id: string; password_reset_expires: number }>(),
+        .first(),
     "getCustomerByResetToken"
-  );
+  ) as { customer_id: string; password_reset_expires: number } | null;
 
   if (!customer) {
     throw new AppError(
