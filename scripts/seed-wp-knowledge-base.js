@@ -44,7 +44,7 @@ Key features: real-time web search powered by Tavily API (answers are always cur
 
 System requirements: WordPress 5.9 or higher, PHP 7.4 or higher.
 
-The plugin connects to the Insertabot API at api.insertabot.io. It requires an API key from insertabot.io to function. The free plan provides 50 messages per day. The Pro plan at $9.99/month provides 500 embedded widget messages per month and unlimited playground messages.`,
+The plugin connects to the Insertabot API at api.insertabot.io. It requires an API key from insertabot.io to function. The free plan provides 20 messages per day. The Pro plan at $9.99/month provides 500 embedded widget messages per month and unlimited playground messages.`,
   },
   {
     title: 'Insertabot WordPress Plugin Installation Guide',
@@ -105,7 +105,7 @@ Bot appearance (name, greeting message, colors, avatar) is configured in the Ins
     content: `Insertabot pricing:
 
 Free plan (no credit card required):
-- 50 AI chat messages per day (embedded widget conversations)
+- 20 AI chat messages per day (embedded widget conversations)
 - Real-time web search on every response
 - Basic customization (colors, bot name, greeting)
 - Mobile-optimized widget
@@ -160,7 +160,7 @@ Problem: The chat widget is not appearing on the site.
 Solution: Verify Enable Chatbot is toggled on in Settings > Insertabot. Also check that the site URL is allowed in the CORS / allowed domains settings in the Insertabot dashboard at insertabot.io/dashboard.
 
 Problem: The chatbot stopped responding mid-day.
-Solution: The free plan limit of 50 messages per day has been reached. It resets at midnight. Upgrade to Pro at $9.99/month for 500 monthly embedded messages.
+Solution: The free plan limit of 20 messages per day has been reached. It resets at midnight. Upgrade to Pro at $9.99/month for 500 monthly embedded messages.
 
 Problem: "Failed to securely store API key" error.
 Solution: This can happen if WordPress encryption functions are unavailable. Check that AUTH_KEY is defined in wp-config.php (it should be by default). If the issue persists, contact support@insertabot.io.`,

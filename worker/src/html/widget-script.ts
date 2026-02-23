@@ -51,7 +51,7 @@ export function getWidgetScript(apiOrigin: string): string {
             endpoint: scriptElement?.getAttribute("data-api-base") || "${apiOrigin}"
         },
         quotas: {
-            freeTierMax: 50,
+            freeTierMax: 20,
             storageIdentifier: 'ib_usage_tracker'
         },
         state: {
