@@ -1,5 +1,5 @@
 /**
- * Email Service using Cloudflare MailChannels
+ * Email Service using Resend
  * Provides email sending functionality for authentication flows
  */
 
@@ -16,54 +16,28 @@ export interface SendEmailResult {
 }
 
 /**
- * Send an email using Cloudflare MailChannels API
- * MailChannels is free for Cloudflare Workers
- *
- * DKIM Configuration:
- * - Uses Cloudflare Email Routing DKIM key (cf2024-1._domainkey.insertabot.io)
- * - This ensures emails pass DMARC authentication
- * - Required for deliverability and preventing spoofing
+ * Send an email using Resend
  */
-export async function sendEmail(options: EmailOptions): Promise<SendEmailResult> {
+export async function sendEmail(options: EmailOptions, env: { RESEND_API_KEY?: string }): Promise<SendEmailResult> {
 	try {
-		const response = await fetch('https://api.mailchannels.net/tx/v1/send', {
+		const response = await fetch('https://api.resend.com/emails', {
 			method: 'POST',
 			headers: {
+				'Authorization': `Bearer ${env.RESEND_API_KEY}`,
 				'Content-Type': 'application/json',
 			},
 			body: JSON.stringify({
-				personalizations: [
-					{
-						to: [{ email: options.to }],
-						dkim_domain: 'insertabot.io',
-						dkim_selector: 'cf2024-1',
-					},
-				],
-				from: {
-					email: 'support@insertabot.io',
-					name: 'Insertabot',
-				},
+				from: 'Insertabot <support@insertabot.io>',
+				to: [options.to],
 				subject: options.subject,
-				content: [
-					{
-						type: 'text/html',
-						value: options.html,
-					},
-					...(options.text
-						? [
-								{
-									type: 'text/plain',
-									value: options.text,
-								},
-						  ]
-						: []),
-				],
+				html: options.html,
+				...(options.text ? { text: options.text } : {}),
 			}),
 		});
 
 		if (!response.ok) {
 			const errorText = await response.text();
-			console.error('MailChannels error:', errorText);
+			console.error('Resend error:', errorText);
 			return {
 				success: false,
 				error: `Email service error: ${response.status}`,
@@ -86,6 +60,7 @@ export async function sendEmail(options: EmailOptions): Promise<SendEmailResult>
 export async function sendVerificationEmail(
 	email: string,
 	verificationToken: string,
+	env: { RESEND_API_KEY?: string },
 	baseUrl: string = 'https://insertabot.io'
 ): Promise<SendEmailResult> {
 	const verificationUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
@@ -98,7 +73,7 @@ export async function sendVerificationEmail(
 		subject: 'Verify Your Insertabot Account',
 		html,
 		text,
-	});
+	}, env);
 }
 
 /**
@@ -107,6 +82,7 @@ export async function sendVerificationEmail(
 export async function sendPasswordResetEmail(
 	email: string,
 	resetToken: string,
+	env: { RESEND_API_KEY?: string },
 	baseUrl: string = 'https://insertabot.io'
 ): Promise<SendEmailResult> {
 	const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
@@ -119,13 +95,13 @@ export async function sendPasswordResetEmail(
 		subject: 'Reset Your Insertabot Password',
 		html,
 		text,
-	});
+	}, env);
 }
 
 /**
  * Send welcome email after verification
  */
-export async function sendWelcomeEmail(email: string, companyName: string): Promise<SendEmailResult> {
+export async function sendWelcomeEmail(email: string, companyName: string, env: { RESEND_API_KEY?: string }): Promise<SendEmailResult> {
 	const html = generateWelcomeEmailHtml(companyName);
 	const text = generateWelcomeEmailText(companyName);
 
@@ -134,7 +110,7 @@ export async function sendWelcomeEmail(email: string, companyName: string): Prom
 		subject: 'Welcome to Insertabot! 🎉',
 		html,
 		text,
-	});
+	}, env);
 }
 
 // ==================== Email Templates ====================

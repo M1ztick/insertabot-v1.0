@@ -29,7 +29,8 @@ export interface SendVerificationEmailResponse {
 export async function handleSendVerificationEmail(
 	db: D1Database,
 	request: SendVerificationEmailRequest,
-	ipAddress: string | null
+	ipAddress: string | null,
+	env: { RESEND_API_KEY?: string }
 ): Promise<SendVerificationEmailResponse> {
 	// Get customer by email
 	const customer = await withDatabase(
@@ -101,7 +102,7 @@ export async function handleSendVerificationEmail(
 	);
 
 	// Send verification email
-	const emailResult = await sendVerificationEmail(customer.email, verificationToken);
+	const emailResult = await sendVerificationEmail(customer.email, verificationToken, env);
 
 	if (!emailResult.success) {
 		console.error('Failed to send verification email:', emailResult.error);
@@ -139,7 +140,8 @@ export interface VerifyEmailResponse {
 export async function handleVerifyEmail(
 	db: D1Database,
 	request: VerifyEmailRequest,
-	ipAddress: string | null
+	ipAddress: string | null,
+	env: { RESEND_API_KEY?: string }
 ): Promise<VerifyEmailResponse> {
 	// Find customer with valid verification token
 	const customer = await withDatabase(
@@ -209,7 +211,7 @@ export async function handleVerifyEmail(
 	});
 
 	// Send welcome email (non-blocking, don't wait for result)
-	sendWelcomeEmail(customer.email, customer.company_name).catch(err => {
+	sendWelcomeEmail(customer.email, customer.company_name, env).catch(err => {
 		console.error('Failed to send welcome email:', err);
 	});
 
@@ -233,9 +235,10 @@ export interface ResendVerificationEmailRequest {
 export async function handleResendVerificationEmail(
 	db: D1Database,
 	request: ResendVerificationEmailRequest,
-	ipAddress: string | null
+	ipAddress: string | null,
+	env: { RESEND_API_KEY?: string }
 ): Promise<SendVerificationEmailResponse> {
-	return handleSendVerificationEmail(db, { email: request.email }, ipAddress);
+	return handleSendVerificationEmail(db, { email: request.email }, ipAddress, env);
 }
 
 // ==================== Check Verification Status ====================

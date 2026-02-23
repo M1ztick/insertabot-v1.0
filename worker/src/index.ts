@@ -89,6 +89,7 @@ export interface Env {
   STRIPE_WEBHOOK_SECRET?: string;
   STRIPE_PRO_PRICE_ID?: string; // Price ID for Pro plan on Stripe
   TAVILY_API_KEY?: string; // Tavily Search API key for web search (AI-optimized)
+  RESEND_API_KEY?: string; // Resend API key for transactional email
 }
 
 interface ChatMessage {
@@ -1054,7 +1055,7 @@ export default {
         // Password reset request
         if (url.pathname === "/api/auth/password-reset-request" && request.method === "POST") {
           const body = await request.json() as { email: string };
-          const result = await handlePasswordResetRequest(env.DB, body.email, clientIP);
+          const result = await handlePasswordResetRequest(env.DB, body.email, clientIP, env);
 
           return new Response(
             JSON.stringify(result),
@@ -1082,7 +1083,7 @@ export default {
         // Send email verification
         if (url.pathname === "/api/auth/email/send-verification" && request.method === "POST") {
           const body = await request.json() as { email: string };
-          const result = await handleSendVerificationEmail(env.DB, body, clientIP);
+          const result = await handleSendVerificationEmail(env.DB, body, clientIP, env);
 
           return new Response(
             JSON.stringify(result),
@@ -1096,7 +1097,7 @@ export default {
         // Verify email with token
         if (url.pathname === "/api/auth/email/verify" && request.method === "POST") {
           const body = await request.json() as { token: string };
-          const result = await handleVerifyEmail(env.DB, body, clientIP);
+          const result = await handleVerifyEmail(env.DB, body, clientIP, env);
 
           return new Response(
             JSON.stringify(result),
@@ -1110,7 +1111,7 @@ export default {
         // Resend verification email
         if (url.pathname === "/api/auth/email/resend" && request.method === "POST") {
           const body = await request.json() as { email: string };
-          const result = await handleResendVerificationEmail(env.DB, body, clientIP);
+          const result = await handleResendVerificationEmail(env.DB, body, clientIP, env);
 
           return new Response(
             JSON.stringify(result),
@@ -1162,7 +1163,7 @@ export default {
           }
 
           try {
-            const result = await handleVerifyEmail(env.DB, { token }, clientIP);
+            const result = await handleVerifyEmail(env.DB, { token }, clientIP, env);
 
             return new Response(
               `<!DOCTYPE html>

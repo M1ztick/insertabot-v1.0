@@ -618,7 +618,8 @@ export async function handleDisable2FA(
 export async function handlePasswordResetRequest(
   db: D1Database,
   email: string,
-  ipAddress: string | null
+  ipAddress: string | null,
+  env: { RESEND_API_KEY?: string }
 ): Promise<{ success: boolean; message: string; reset_token?: string }> {
   const customer = await withDatabase(
     async () =>
@@ -665,7 +666,7 @@ export async function handlePasswordResetRequest(
   });
 
   // Send password reset email
-  const emailResult = await sendPasswordResetEmail(email, resetToken);
+  const emailResult = await sendPasswordResetEmail(email, resetToken, env);
 
   if (!emailResult.success) {
     console.error("Failed to send password reset email:", emailResult.error);
