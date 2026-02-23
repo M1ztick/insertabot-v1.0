@@ -4,7 +4,7 @@
 {
   "name": "insertabot-api",
   "main": "src/index.ts",
-  "compatibility_date": "2025-03-07",
+  "compatibility_date": "2026-01-20",
   "compatibility_flags": ["nodejs_compat"],
 
   // Static assets (public directory)
