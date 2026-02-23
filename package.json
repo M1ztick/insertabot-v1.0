@@ -5,9 +5,9 @@
   "scripts": {
     "dev": "node scripts/dev-server.js",
     "dev:port": "node scripts/dev-server.js --port",
-    "dev:worker": "cd worker && wrangler dev",
-    "deploy": "wrangler deploy --config worker/wrangler.toml --env=\"\"",
-    "deploy:production": "wrangler deploy --config worker/wrangler.toml --env=\"\"",
+    "dev:worker": "wrangler dev --config worker/wrangler.jsonc",
+    "deploy": "wrangler deploy --config worker/wrangler.jsonc",
+    "deploy:production": "wrangler deploy --config worker/wrangler.jsonc",
     "deploy:dev": "echo '⚠️  Development deployments are archived. Use npm run deploy for production only.' && exit 1",
     "test": "node scripts/dev-server.js --port 8080",
     "prepare": "husky install || true",
@@ -28,6 +28,6 @@
     "@secretlint/secretlint-rule-preset-recommend": "^11.2.5",
     "husky": "^8.0.0",
     "secretlint": "^11.2.5",
-    "wrangler": "^4.47.0"
+    "wrangler": "^4.67.0"
   }
 }
