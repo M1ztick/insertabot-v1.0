@@ -234,8 +234,8 @@ async function fetchSingle<T>(
     const result = await db
       .prepare(query)
       .bind(...params)
-      .first<T>();
-    return result || null;
+      .first();
+    return (result as T) || null;
   }, operationName);
 }
 
