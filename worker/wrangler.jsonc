@@ -1,10 +1,10 @@
 // insertabot-api — Cloudflare Workers Configuration
 // Migrated from wrangler.toml to wrangler.jsonc
-// Last updated: 2026-02-21
+// Last updated: 2026-02-23
 {
   "name": "insertabot-api",
   "main": "src/index.ts",
-  "compatibility_date": "2024-01-20",
+  "compatibility_date": "2025-11-17",
   "compatibility_flags": ["nodejs_compat"],
 
   // Static assets (public directory)
@@ -98,41 +98,5 @@
     // here intentionally to keep it out of version control. Set it via:
     //   wrangler secret put STRIPE_PUBLISHABLE_KEY
     // (Secrets are fine for publishable keys and keeps the config clean)
-  },
-
-  // ============================================================================
-  // DEVELOPMENT ENVIRONMENT (REFERENCE ONLY — DO NOT DEPLOY)
-  // ============================================================================
-  // Kept as a reference and failsafe. Do not use --env=development in deploys.
-  // ============================================================================
-  "env": {
-    "development": {
-      "name": "insertabot-api-dev",
-
-      "observability": {
-        "enabled": true,
-        "head_sampling_rate": 1 // 100% sampling in dev for full visibility
-      },
-
-      "vars": {
-        "ENVIRONMENT": "development",
-        "CORS_ORIGINS": "localhost:3000,localhost:5173,127.0.0.1:3000"
-      },
-
-      "d1_databases": [
-        {
-          "binding": "DB",
-          "database_name": "insertabot-development",
-          "database_id": "551c3e86-cbf6-4217-8617-20d60085a7f1"
-        }
-      ],
-
-      "kv_namespaces": [
-        {
-          "binding": "RATE_LIMITER",
-          "id": "3ff9aad75a3443709196fc824f40a4d2"
-        }
-      ]
-    }
   }
 }
