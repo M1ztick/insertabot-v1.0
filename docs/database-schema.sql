@@ -14,6 +14,24 @@ CREATE TABLE IF NOT EXISTS customers (
     created_at INTEGER NOT NULL, -- Unix timestamp
     updated_at INTEGER NOT NULL,
 
+    -- Auth
+    password_hash TEXT,
+    password_salt TEXT,
+    totp_enabled BOOLEAN DEFAULT 0,
+    totp_secret TEXT,
+    backup_codes TEXT, -- JSON array of hashed backup codes
+    failed_login_attempts INTEGER DEFAULT 0,
+    account_locked_until INTEGER, -- Unix timestamp
+    password_reset_token TEXT,
+    password_reset_expires INTEGER, -- Unix timestamp
+    last_login_at INTEGER,
+
+    -- Email Verification
+    email_verified BOOLEAN DEFAULT 0,
+    email_verification_token TEXT,
+    email_verification_expires INTEGER, -- Unix timestamp
+    email_verification_sent_at INTEGER, -- Unix timestamp for rate limiting
+
     -- Rate limiting
     rate_limit_per_hour INTEGER DEFAULT 5,
     rate_limit_per_day INTEGER DEFAULT 20,
@@ -33,6 +51,47 @@ CREATE TABLE IF NOT EXISTS customers (
 CREATE INDEX idx_customers_api_key ON customers(api_key);
 CREATE INDEX idx_customers_email ON customers(email);
 CREATE INDEX idx_customers_status ON customers(status);
+CREATE INDEX idx_customers_reset_token ON customers(password_reset_token);
+CREATE INDEX idx_customers_verification_token ON customers(email_verification_token);
+
+-- User sessions
+CREATE TABLE IF NOT EXISTS sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT UNIQUE NOT NULL,
+    customer_id TEXT NOT NULL,
+
+    ip_address TEXT,
+    user_agent TEXT,
+    is_valid INTEGER DEFAULT 1,
+
+    created_at INTEGER NOT NULL, -- Unix timestamp
+    expires_at INTEGER NOT NULL, -- Unix timestamp
+    last_accessed_at INTEGER NOT NULL, -- Unix timestamp
+
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_sessions_id ON sessions(session_id);
+CREATE INDEX idx_sessions_customer ON sessions(customer_id);
+CREATE INDEX idx_sessions_expires ON sessions(expires_at);
+
+-- Security audit trail
+CREATE TABLE IF NOT EXISTS security_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id TEXT,
+
+    event_type TEXT NOT NULL, -- e.g., login_success, login_failed, 2fa_enabled, password_changed
+    timestamp INTEGER NOT NULL, -- Unix timestamp
+
+    ip_address TEXT,
+    user_agent TEXT,
+    metadata TEXT, -- JSON string for additional details
+
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_security_logs_customer_event ON security_logs(customer_id, event_type);
+CREATE INDEX idx_security_logs_timestamp ON security_logs(timestamp);
 
 -- Widget configurations
 CREATE TABLE IF NOT EXISTS widget_configs (
@@ -44,7 +103,7 @@ CREATE TABLE IF NOT EXISTS widget_configs (
     position TEXT DEFAULT 'bottom-right', -- bottom-right, bottom-left
     greeting_message TEXT DEFAULT 'Hi! How can I help you today?',
     bot_name TEXT DEFAULT 'Insertabot',
-    bot_avatar_url TEXT,
+    bot_avatar_url TEXT DEFAULT '/insertabot-avatar.png',
 
     -- Behavior
     initial_message TEXT,
@@ -188,28 +247,3 @@ CREATE TABLE IF NOT EXISTS api_keys (
 
 CREATE INDEX idx_api_keys_hash ON api_keys(key_hash);
 CREATE INDEX idx_api_keys_customer ON api_keys(customer_id);
-
--- Seed data for development
-INSERT INTO customers (customer_id, email, company_name, website_url, plan_type, api_key, created_at, updated_at, rate_limit_per_hour, rate_limit_per_day)
-VALUES (
-    'cust_demo_001',
-    'demo@insertabot.io',
-    'Insertabot Demo',
-    'https://insertabot.io',
-    'pro',
-    'ib_sk_demo_12345678901234567890123456789012',
-    strftime('%s', 'now'),
-    strftime('%s', 'now'),
-    1000,
-    10000
-);
-
-INSERT INTO widget_configs (customer_id, bot_name, greeting_message, system_prompt, created_at, updated_at)
-VALUES (
-    'cust_demo_001',
-    'Mistyk Assistant',
-    'Welcome to Mistyk Media! How can I help you today?',
-    'You are a knowledgeable and enthusiastic assistant for Mistyk Media, a creative agency specializing in web design and digital marketing. You''re passionate about helping visitors learn about our services, answer questions about web development, design, and digital marketing, and guide them toward solutions that fit their needs. Be conversational and friendly while staying professional. Share insights about modern web technologies, design trends, and digital marketing strategies when relevant. Your goal is to make every interaction feel personal and valuable, building trust and showcasing the quality of service Mistyk Media provides.',
-    strftime('%s', 'now'),
-    strftime('%s', 'now')
-);

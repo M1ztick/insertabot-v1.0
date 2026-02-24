@@ -12,10 +12,11 @@ CREATE TABLE IF NOT EXISTS sessions (
 
     created_at INTEGER NOT NULL,
     expires_at INTEGER NOT NULL,
-    last_seen_at INTEGER NOT NULL,
+    last_accessed_at INTEGER NOT NULL,
 
     ip_address TEXT,
     user_agent TEXT,
+    is_valid INTEGER DEFAULT 1,
 
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 );

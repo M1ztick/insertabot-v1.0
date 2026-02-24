@@ -62,10 +62,11 @@ CREATE TABLE IF NOT EXISTS sessions (
 
     ip_address TEXT,
     user_agent TEXT,
+    is_valid INTEGER DEFAULT 1,
 
     created_at INTEGER NOT NULL, -- Unix timestamp
     expires_at INTEGER NOT NULL, -- Unix timestamp
-    last_seen_at INTEGER NOT NULL, -- Unix timestamp
+    last_accessed_at INTEGER NOT NULL, -- Unix timestamp
 
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 );

@@ -39,9 +39,9 @@ CREATE INDEX idx_sessions_customer_id ON sessions(customer_id);
 CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
 
 -- Create audit log for security events
-CREATE TABLE IF NOT EXISTS security_audit_log (
+CREATE TABLE IF NOT EXISTS security_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    customer_id TEXT NOT NULL,
+    customer_id TEXT,
     event_type TEXT NOT NULL, -- login_success, login_failed, password_changed, 2fa_enabled, etc.
     timestamp INTEGER NOT NULL,
     ip_address TEXT,
@@ -51,5 +51,5 @@ CREATE TABLE IF NOT EXISTS security_audit_log (
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_audit_customer_timestamp ON security_audit_log(customer_id, timestamp);
-CREATE INDEX idx_audit_event_type ON security_audit_log(event_type);
+CREATE INDEX idx_security_logs_customer_event ON security_logs(customer_id, event_type);
+CREATE INDEX idx_security_logs_timestamp ON security_logs(timestamp);

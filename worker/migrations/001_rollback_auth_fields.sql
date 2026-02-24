@@ -4,7 +4,7 @@
 -- WARNING: This will remove all authentication data!
 
 -- Drop new tables
-DROP TABLE IF EXISTS security_audit_log;
+DROP TABLE IF EXISTS security_logs;
 DROP TABLE IF EXISTS sessions;
 
 -- Remove authentication columns from customers table
