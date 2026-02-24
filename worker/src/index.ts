@@ -56,6 +56,7 @@ import { getSignupHTML } from "./html/signup";
 import { getLoginHTML } from "./html/login";
 import { getResetPasswordHTML } from "./html/reset-password";
 import { getDashboardHTML } from "./html/dashboard";
+import { HealthMonitor } from "./health";
 import {
   performWebSearch,
   formatSearchResultsForAI,
@@ -726,24 +727,16 @@ async function handleChatRequest(
 
 async function handleHealthCheck(env: Env): Promise<Response> {
   try {
-    const result = await withTimeout(
-      () => env.DB.prepare("SELECT 1").first(),
-      5000,
-      'health check database query'
-    );
-    const dbHealthy = !!result;
-
+    const monitor = new HealthMonitor(env.ENVIRONMENT, env.ANALYTICS);
+    const checks = HealthMonitor.createStandardChecks(env);
+    checks.forEach(check => monitor.addCheck(check));
+    
+    const health = await monitor.runHealthChecks();
+    
     return new Response(
-      JSON.stringify({
-        status: dbHealthy ? "healthy" : "degraded",
-        checks: {
-          database: dbHealthy,
-          tavily_configured: !!env.TAVILY_API_KEY,
-          timestamp: new Date().toISOString(),
-        },
-      }),
+      JSON.stringify(health),
       {
-        status: dbHealthy ? 200 : 503,
+        status: health.status === 'healthy' ? 200 : 503,
         headers: { "Content-Type": "application/json" },
       }
     );
@@ -751,6 +744,7 @@ async function handleHealthCheck(env: Env): Promise<Response> {
     return new Response(
       JSON.stringify({
         status: "unhealthy",
+        timestamp: new Date().toISOString(),
         error: String(error),
       }),
       {
