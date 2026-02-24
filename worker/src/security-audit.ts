@@ -45,7 +45,7 @@ export async function logSecurityEvent(
 
 		await db
 			.prepare(
-				`INSERT INTO security_audit_log (customer_id, event_type, timestamp, ip_address, user_agent, metadata)
+				`INSERT INTO security_logs (customer_id, event_type, timestamp, ip_address, user_agent, metadata)
 				 VALUES (?, ?, ?, ?, ?, ?)`
 			)
 			.bind(
@@ -78,7 +78,7 @@ export async function getSecurityEvents(
 		const result = await db
 			.prepare(
 				`SELECT event_type, timestamp, ip_address, user_agent, metadata
-				 FROM security_audit_log
+				 FROM security_logs
 				 WHERE customer_id = ?
 				 ORDER BY timestamp DESC
 				 LIMIT ?`
@@ -103,7 +103,7 @@ export async function getRecentFailedLogins(
 		const result = await db
 			.prepare(
 				`SELECT COUNT(*) as count
-				 FROM security_audit_log
+				 FROM security_logs
 				 WHERE customer_id = ? AND event_type = 'login_failed' AND timestamp > ?`
 			)
 			.bind(customerId, oneHourAgo)
@@ -121,7 +121,7 @@ export async function cleanupOldAuditLogs(db: D1Database, daysToKeep: number = 9
 		const cutoffTime = Math.floor(Date.now() / 1000) - daysToKeep * 86400;
 
 		const result = await db
-			.prepare(`DELETE FROM security_audit_log WHERE timestamp < ?`)
+			.prepare(`DELETE FROM security_logs WHERE timestamp < ?`)
 			.bind(cutoffTime)
 			.run();
 
