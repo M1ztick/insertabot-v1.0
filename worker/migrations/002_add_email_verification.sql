@@ -1,14 +1,12 @@
 -- Migration: Add Email Verification Fields
--- This adds email verification tracking to the customers table
+-- NOTE: The ALTER TABLE statements are intentionally omitted here.
+-- These columns (email_verified, email_verification_token, email_verification_expires,
+-- email_verification_sent_at) were already added to production via ad-hoc scripts
+-- before this Wrangler migration was tracked. Adding them again would fail with
+-- "duplicate column name".
 
--- Add email verification columns
-ALTER TABLE customers ADD COLUMN email_verified BOOLEAN DEFAULT 0;
-ALTER TABLE customers ADD COLUMN email_verification_token TEXT;
-ALTER TABLE customers ADD COLUMN email_verification_expires INTEGER; -- Unix timestamp
-ALTER TABLE customers ADD COLUMN email_verification_sent_at INTEGER; -- Unix timestamp for rate limiting
-
--- Create index for verification token lookups
+-- Recreate the index in case it was dropped by the preceding rollback migration
 CREATE INDEX IF NOT EXISTS idx_customers_verification_token ON customers(email_verification_token);
 
--- Mark existing customers as verified (grandfather them in)
+-- Grandfather existing customers (idempotent)
 UPDATE customers SET email_verified = 1 WHERE email_verified IS NULL OR email_verified = 0;
