@@ -84,19 +84,19 @@
   "ai": {
     "binding": "AI"
   },
-
+  
   // Environment variables
   // NOTE: Do NOT add secrets here. Manage secrets via:
   //   wrangler secret put STRIPE_SECRET_KEY
   //   wrangler secret put STRIPE_WEBHOOK_SECRET
   //   wrangler secret put STRIPE_PRO_PRICE_ID
   //   wrangler secret put TAVILY_API_KEY
+  // STRIPE_PUBLISHABLE_KEY is a publishable (non-secret) key but is omitted
+  // here intentionally to keep it out of version control. Set it via:
+  //   wrangler secret put STRIPE_PUBLISHABLE_KEY
+  // (Secrets are fine for publishable keys and keeps the config clean)
   "vars": {
     "ENVIRONMENT": "production",
     "CORS_ORIGINS": "https://insertabot.io"
-    // STRIPE_PUBLISHABLE_KEY is a publishable (non-secret) key but is omitted
-    // here intentionally to keep it out of version control. Set it via:
-    //   wrangler secret put STRIPE_PUBLISHABLE_KEY
-    // (Secrets are fine for publishable keys and keeps the config clean)
   }
 }
