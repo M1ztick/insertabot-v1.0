@@ -16,5 +16,9 @@
 ALTER TABLE customers ADD COLUMN failed_login_attempts INTEGER DEFAULT 0;
 ALTER TABLE customers ADD COLUMN account_locked_until INTEGER;
 
+-- password_reset_token may also be missing; add it before creating the index
+-- SQLite will error if it already exists, which is safe to ignore
+ALTER TABLE customers ADD COLUMN password_reset_token TEXT;
+
 -- Create index for password reset token
 CREATE INDEX IF NOT EXISTS idx_customers_reset_token ON customers(password_reset_token);

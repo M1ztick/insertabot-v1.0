@@ -34,9 +34,9 @@ CREATE TABLE IF NOT EXISTS sessions (
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_sessions_session_id ON sessions(session_id);
-CREATE INDEX idx_sessions_customer_id ON sessions(customer_id);
-CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_sessions_session_id ON sessions(session_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_customer_id ON sessions(customer_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 
 -- Create audit log for security events
 CREATE TABLE IF NOT EXISTS security_logs (
@@ -51,5 +51,5 @@ CREATE TABLE IF NOT EXISTS security_logs (
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_security_logs_customer_event ON security_logs(customer_id, event_type);
-CREATE INDEX idx_security_logs_timestamp ON security_logs(timestamp);
+CREATE INDEX IF NOT EXISTS idx_security_logs_customer_event ON security_logs(customer_id, event_type);
+CREATE INDEX IF NOT EXISTS idx_security_logs_timestamp ON security_logs(timestamp);

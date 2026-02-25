@@ -16,10 +16,12 @@
 -- Adding with safe defaults that preserve existing functionality
 
 -- Add email verification columns (required by email-verification.ts)
-ALTER TABLE customers ADD COLUMN email_verified INTEGER DEFAULT 0;
-ALTER TABLE customers ADD COLUMN email_verification_token TEXT;
-ALTER TABLE customers ADD COLUMN email_verification_expires INTEGER; -- Unix timestamp
-ALTER TABLE customers ADD COLUMN email_verification_sent_at INTEGER; -- Unix timestamp for rate limiting
+-- NOTE: These are already applied by tracked migration 001-add-email-verification-fields.sql.
+-- Commented out here to prevent "duplicate column" errors if both scripts are run.
+-- ALTER TABLE customers ADD COLUMN email_verified INTEGER DEFAULT 0;
+-- ALTER TABLE customers ADD COLUMN email_verification_token TEXT;
+-- ALTER TABLE customers ADD COLUMN email_verification_expires INTEGER; -- Unix timestamp
+-- ALTER TABLE customers ADD COLUMN email_verification_sent_at INTEGER; -- Unix timestamp for rate limiting
 
 -- Add password authentication columns (if not already present)
 -- Note: Some of these may already exist, SQLite will error if they do
@@ -80,9 +82,9 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 -- Create indexes for sessions table
-CREATE INDEX IF NOT EXISTS idx_sessions_id ON sessions(session_id);
-CREATE INDEX IF NOT EXISTS idx_sessions_customer ON sessions(customer_id);
-CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_sessions_session_id ON sessions(session_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_customer_id ON sessions(customer_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 
 -- =============================================================================
 -- PHASE 5: CREATE OR UPDATE security_audit_log TABLE

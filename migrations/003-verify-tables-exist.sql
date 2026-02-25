@@ -21,9 +21,9 @@ CREATE TABLE IF NOT EXISTS sessions (
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_sessions_id ON sessions(session_id);
-CREATE INDEX IF NOT EXISTS idx_sessions_customer ON sessions(customer_id);
-CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_sessions_session_id ON sessions(session_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_customer_id ON sessions(customer_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 
 -- =============================================================================
 -- Security Logs Table

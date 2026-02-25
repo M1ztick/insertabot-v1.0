@@ -56,6 +56,6 @@ INSERT INTO customers SELECT * FROM customers_backup;
 DROP TABLE customers_backup;
 
 -- Recreate indexes
-CREATE INDEX idx_customers_email ON customers(email);
-CREATE INDEX idx_customers_api_key ON customers(api_key);
-CREATE INDEX idx_customers_status ON customers(status);
+CREATE INDEX IF NOT EXISTS idx_customers_email ON customers(email);
+CREATE INDEX IF NOT EXISTS idx_customers_api_key ON customers(api_key);
+CREATE INDEX IF NOT EXISTS idx_customers_status ON customers(status);
