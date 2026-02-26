@@ -954,11 +954,22 @@ export default {
             throw new AppError(ErrorCode.INTERNAL_ERROR, "Failed to create account", 500);
           }
 
+          // Send verification email automatically after account creation
+          const verificationResult = await handleSendVerificationEmail(
+            env.DB,
+            { email: body.email },
+            clientIP,
+            env
+          );
+          if (!verificationResult.success) {
+            console.error("Failed to send verification email after account creation for:", body.email);
+          }
+
           return new Response(
             JSON.stringify({
               success: true,
               api_key: customer.api_key,
-              message: "Account created successfully"
+              message: "Account created successfully. Please check your email to verify your account."
             }),
             {
               status: 201,
