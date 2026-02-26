@@ -27,7 +27,8 @@ export async function sendEmail(options: EmailOptions, env: { RESEND_API_KEY?: s
 				'Content-Type': 'application/json',
 			},
 			body: JSON.stringify({
-				from: 'Insertabot <support@insertabot.io>',
+				from: 'Insertabot <noreply@support.insertabot.io>',
+				reply_to: 'support@insertabot.io',
 				to: [options.to],
 				subject: options.subject,
 				html: options.html,
