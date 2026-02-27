@@ -1,4 +1,3 @@
-
 export function getLandingHTML(origin: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -203,7 +202,7 @@ export function getLandingHTML(origin: string): string {
     }
 
     .mission-quote::before {
-      content: '"';
+      content: '\u201c';
       position: absolute;
       left: 0;
       top: -10px;
@@ -214,7 +213,7 @@ export function getLandingHTML(origin: string): string {
     }
 
     .mission-quote::after {
-      content: '"';
+      content: '\u201d';
       position: absolute;
       right: 0;
       bottom: -30px;
@@ -285,6 +284,186 @@ export function getLandingHTML(origin: string): string {
     .feature p {
       color: var(--muted);
       font-size: 0.95rem;
+    }
+
+    /* ---------- PRICING ---------- */
+
+    .pricing {
+      max-width: 1200px;
+      margin: 90px auto;
+      padding: 0 20px;
+      text-align: center;
+    }
+
+    .pricing h2 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, var(--cyan), var(--magenta));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .pricing-subtitle {
+      color: var(--muted);
+      font-size: 1.1rem;
+      margin-bottom: 56px;
+    }
+
+    .pricing-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 28px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 640px) {
+      .pricing-cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .pricing-card {
+      background: var(--panel);
+      border-radius: var(--radius);
+      padding: 44px 36px;
+      border: 1px solid rgba(0,245,255,0.2);
+      text-align: left;
+      position: relative;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .pricing-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 0 28px rgba(0,245,255,0.15);
+    }
+
+    .pricing-card.featured {
+      border-color: var(--cyan);
+      box-shadow: 0 0 30px rgba(0,245,255,0.15);
+    }
+
+    .pricing-badge {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--cyan), var(--magenta));
+      color: #000;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 16px;
+      border-radius: 20px;
+      white-space: nowrap;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .plan-name {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .plan-price {
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .plan-price span {
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    .plan-desc {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 32px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .plan-features {
+      list-style: none;
+      margin-bottom: 36px;
+    }
+
+    .plan-features li {
+      font-size: 0.95rem;
+      color: var(--text);
+      padding: 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .plan-features li::before {
+      content: '✓';
+      color: var(--cyan);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .plan-features li.muted {
+      color: var(--muted);
+    }
+
+    .plan-features li.muted::before {
+      color: var(--muted);
+    }
+
+    .plan-cta {
+      display: block;
+      width: 100%;
+      padding: 14px 0;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 1rem;
+      text-align: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .plan-cta.primary {
+      background: linear-gradient(135deg, var(--cyan), var(--magenta));
+      color: #fff;
+      box-shadow: 0 0 20px rgba(0,245,255,0.3);
+    }
+
+    .plan-cta.primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px rgba(0,245,255,0.55);
+    }
+
+    .plan-cta.outline {
+      border: 2px solid rgba(0,245,255,0.4);
+      color: var(--cyan);
+    }
+
+    .plan-cta.outline:hover {
+      border-color: var(--cyan);
+      box-shadow: 0 0 16px rgba(0,245,255,0.15);
+    }
+
+    .pricing-climate {
+      margin-top: 48px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .pricing-climate p {
+      font-size: 0.85rem;
+      color: var(--muted);
     }
 
     /* ---------- DEMO ---------- */
@@ -397,6 +576,58 @@ export function getLandingHTML(origin: string): string {
     </article>
   </section>
 </main>
+
+<section class="pricing">
+  <h2>Simple, Honest Pricing</h2>
+  <p class="pricing-subtitle">No surprises. No hidden fees. Cancel anytime.</p>
+
+  <div class="pricing-cards">
+
+    <div class="pricing-card">
+      <p class="plan-name">Free</p>
+      <p class="plan-price">$0 <span>/ month</span></p>
+      <p class="plan-desc">Perfect for getting started and trying it out.</p>
+      <ul class="plan-features">
+        <li>20 chatbot messages per day</li>
+        <li>Fully customizable widget</li>
+        <li>Secure API key authentication</li>
+        <li>WordPress plugin included</li>
+        <li class="muted">Priority support</li>
+        <li class="muted">500 messages per day</li>
+      </ul>
+      <a href="/signup" class="plan-cta outline">Get Started Free</a>
+    </div>
+
+    <div class="pricing-card featured">
+      <div class="pricing-badge">Most Popular</div>
+      <p class="plan-name">Pro</p>
+      <p class="plan-price">$9.99 <span>/ month</span></p>
+      <p class="plan-desc">For sites that need more power and real support.</p>
+      <ul class="plan-features">
+        <li>500 chatbot messages per day</li>
+        <li>Fully customizable widget</li>
+        <li>Secure API key authentication</li>
+        <li>WordPress plugin included</li>
+        <li>Priority support</li>
+        <li>Cancel anytime</li>
+      </ul>
+      <a href="https://payments.insertabot.io/b/9B64gzdo4cnk2rz8QS0VO00" class="plan-cta primary">Upgrade to Pro →</a>
+    </div>
+
+  </div>
+
+  <div class="pricing-climate">
+    <p>We contribute a portion of revenue to carbon removal.</p>
+    <iframe
+      width="380"
+      height="38"
+      style="border:0;"
+      src="https://climate.stripe.com/badge/CpXMYL?theme=dark&size=small&locale=en-US"
+      title="Stripe Climate contribution badge"
+      loading="lazy">
+    </iframe>
+  </div>
+</section>
 
 <section class="demo">
   <h2>See It In Action</h2>
