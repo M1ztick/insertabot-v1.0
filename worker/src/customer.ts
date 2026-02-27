@@ -61,6 +61,7 @@ export async function updateWidgetConfig(
 		bot_avatar_url?: string;
 		greeting_message?: string;
 		system_prompt?: string;
+		allowed_domains?: string;
 	}
 ): Promise<boolean> {
 	return withDatabase(async () => {
@@ -86,6 +87,10 @@ export async function updateWidgetConfig(
 		if (config.system_prompt) {
 			updates.push('system_prompt = ?');
 			values.push(config.system_prompt);
+		}
+		if (config.allowed_domains !== undefined) {
+			updates.push('allowed_domains = ?');
+			values.push(config.allowed_domains || null);
 		}
 
 		if (updates.length === 0) return false;

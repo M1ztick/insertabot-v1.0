@@ -597,6 +597,12 @@ export function getDashboardHTML(
         <textarea rows="4" name="system_prompt">${escapeHtml(widgetConfig.system_prompt)}</textarea>
       </div>
 
+      <div class="form-group">
+        <label>Allowed Domains</label>
+        <input name="allowed_domains" value="${escapeHtml(widgetConfig.allowed_domains || '')}" placeholder="e.g. https://yoursite.com, https://www.yoursite.com" />
+        <p style="color:var(--muted);font-size:0.78rem;margin-top:6px;">Comma-separated list of origins allowed to load your widget. Leave blank to allow all origins.</p>
+      </div>
+
       <button class="btn" type="submit">Save Changes</button>
     </form>
   </section>

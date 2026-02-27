@@ -149,7 +149,8 @@ const SECURITY_HEADERS: HeadersInit = {
 // Validate origin against customer's allowed domains
 function isOriginAllowed(origin: string, allowedDomains: string | null): boolean {
   if (!origin || typeof origin !== 'string') return false;
-  if (!allowedDomains || typeof allowedDomains !== 'string') return false;
+  // If no domains are configured, allow all origins — API key is the gate
+  if (!allowedDomains || typeof allowedDomains !== 'string') return true;
 
   try {
     const domains = allowedDomains.split(',').map(d => d.trim()).filter(d => d.length > 0);
