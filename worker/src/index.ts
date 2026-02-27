@@ -50,7 +50,6 @@ import {
 } from "./email-verification";
 import { getSession, getSessionIdFromRequest } from "./session";
 import { getLandingHTML } from "./html/landing";
-import { getDocsHTML } from "./html/docs";
 import { getWidgetScript } from "./html/widget-script";
 import { getPlaygroundHTML } from "./playground";
 import { getSignupHTML } from "./html/signup";
@@ -150,8 +149,7 @@ const SECURITY_HEADERS: HeadersInit = {
 // Validate origin against customer's allowed domains
 function isOriginAllowed(origin: string, allowedDomains: string | null): boolean {
   if (!origin || typeof origin !== 'string') return false;
-  // If no domains are configured, allow all origins — API key is the gate
-  if (!allowedDomains || typeof allowedDomains !== 'string') return true;
+  if (!allowedDomains || typeof allowedDomains !== 'string') return false;
 
   try {
     const domains = allowedDomains.split(',').map(d => d.trim()).filter(d => d.length > 0);
@@ -783,7 +781,7 @@ export default {
       '/api/auth/set-password', '/api/auth/password-reset-request', '/api/auth/password-reset',
       '/api/auth/email/send-verification', '/api/auth/email/verify', '/api/auth/email/resend',
       '/api/auth/email/status', '/verify-email',
-      '/reset-password', '/docs'
+      '/reset-password'
     ];
     
     if (publicRoutes.includes(url.pathname)) {
@@ -815,19 +813,6 @@ export default {
       }
 
       try {
-        if (url.pathname === "/docs" && request.method === "GET") {
-          const html = getDocsHTML(url.origin);
-          return new Response(html, {
-            status: 200,
-            headers: {
-              "Content-Type": "text/html; charset=utf-8",
-              "Cache-Control": "public, max-age=3600",
-              ...corsHeaders,
-              ...SECURITY_HEADERS,
-            },
-          });
-        }
-
         if (url.pathname === "/playground" && request.method === "GET") {
           const html = getPlaygroundHTML(url.origin);
           return new Response(html, {
@@ -1231,6 +1216,45 @@ export default {
               }
             );
           }
+        }
+
+        // Stripe webhook handler
+        if (url.pathname === "/v1/stripe/webhook" && request.method === "POST") {
+          const signature = request.headers.get("stripe-signature");
+          if (!signature) {
+            return new Response(JSON.stringify({ error: "Missing stripe-signature header" }), {
+              status: 400,
+              headers: { "Content-Type": "application/json", ...corsHeaders, ...SECURITY_HEADERS },
+            });
+          }
+
+          const body = await request.text();
+          const isValid = await verifyWebhookSignature(body, signature, env.STRIPE_WEBHOOK_SECRET);
+          if (!isValid) {
+            return new Response(JSON.stringify({ error: "Invalid webhook signature" }), {
+              status: 401,
+              headers: { "Content-Type": "application/json", ...corsHeaders, ...SECURITY_HEADERS },
+            });
+          }
+
+          let event: any;
+          try {
+            event = JSON.parse(body);
+          } catch {
+            return new Response(JSON.stringify({ error: "Invalid JSON payload" }), {
+              status: 400,
+              headers: { "Content-Type": "application/json", ...corsHeaders, ...SECURITY_HEADERS },
+            });
+          }
+
+          const success = await processWebhookEvent(event, env.DB);
+          return new Response(
+            JSON.stringify({ received: true, processed: success }),
+            {
+              status: success ? 200 : 500,
+              headers: { "Content-Type": "application/json", ...corsHeaders, ...SECURITY_HEADERS },
+            }
+          );
         }
 
         if (url.pathname === "/favicon.ico") {
