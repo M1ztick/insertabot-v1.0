@@ -153,7 +153,9 @@ async function handleSubscriptionUpdate(db: D1Database, subscription: any): Prom
 			return false;
 		}
 
-		// Update customer subscription status
+		const isPro = status === 'active';
+
+		// Update customer subscription status and rate limits together
 		const result = await db
 			.prepare(
 				`UPDATE customers
@@ -161,6 +163,8 @@ async function handleSubscriptionUpdate(db: D1Database, subscription: any): Prom
 					 subscription_id = ?,
 					 subscription_status = ?,
 					 plan_type = ?,
+					 rate_limit_per_hour = ?,
+					 rate_limit_per_day = ?,
 					 updated_at = ?
 				 WHERE customer_id = ?`
 			)
@@ -168,7 +172,9 @@ async function handleSubscriptionUpdate(db: D1Database, subscription: any): Prom
 				stripeCustomerId,
 				subscription.id,
 				status,
-				status === 'active' ? 'pro' : 'free',
+				isPro ? 'pro' : 'free',
+				isPro ? 50 : 5,    // pro: 50/hour, free: 5/hour
+				isPro ? 500 : 20,  // pro: 500/day, free: 20/day
 				Math.floor(Date.now() / 1000),
 				customerId
 			)
@@ -194,13 +200,15 @@ async function handleSubscriptionCancelled(db: D1Database, subscription: any): P
 			return false;
 		}
 
-		// Revert to free plan
+		// Revert to free plan and reset rate limits
 		const result = await db
 			.prepare(
 				`UPDATE customers
 				 SET subscription_id = NULL,
 					 subscription_status = 'cancelled',
 					 plan_type = 'free',
+					 rate_limit_per_hour = 5,
+					 rate_limit_per_day = 20,
 					 updated_at = ?
 				 WHERE customer_id = ?`
 			)
