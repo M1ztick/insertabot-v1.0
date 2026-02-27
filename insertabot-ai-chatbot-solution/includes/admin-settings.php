@@ -423,10 +423,7 @@ final class Insertabot_Admin_Settings {
 		<?php if ($docs) : ?>
 			<div class="insertabot-help-card">
 				<h3><span class="dashicons dashicons-book"></span> Need Help?</h3>
-				<p>Check out our documentation for setup guides and troubleshooting.</p>
-				<a href="<?php echo esc_url($docs); ?>" class="button" target="_blank" rel="noopener noreferrer">
-					View Documentation →
-				</a>
+				<p>Check out the <a href="<?php echo esc_url($docs); ?>" target="_blank" rel="noopener noreferrer"><strong>Help &amp; Documentation</strong></a> page for setup guides and common issues. For anything else, visit <a href="<?php echo esc_url($site_url); ?>" target="_blank" rel="noopener noreferrer"><strong>insertabot.io</strong></a> and use the chat widget — our AI assistant is available 24/7.</p>
 			</div>
 		<?php endif; ?>
 	</div>

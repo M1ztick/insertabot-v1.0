@@ -50,6 +50,7 @@ import {
 } from "./email-verification";
 import { getSession, getSessionIdFromRequest } from "./session";
 import { getLandingHTML } from "./html/landing";
+import { getDocsHTML } from "./html/docs";
 import { getWidgetScript } from "./html/widget-script";
 import { getPlaygroundHTML } from "./playground";
 import { getSignupHTML } from "./html/signup";
@@ -782,7 +783,7 @@ export default {
       '/api/auth/set-password', '/api/auth/password-reset-request', '/api/auth/password-reset',
       '/api/auth/email/send-verification', '/api/auth/email/verify', '/api/auth/email/resend',
       '/api/auth/email/status', '/verify-email',
-      '/reset-password'
+      '/reset-password', '/docs'
     ];
     
     if (publicRoutes.includes(url.pathname)) {
@@ -814,6 +815,19 @@ export default {
       }
 
       try {
+        if (url.pathname === "/docs" && request.method === "GET") {
+          const html = getDocsHTML(url.origin);
+          return new Response(html, {
+            status: 200,
+            headers: {
+              "Content-Type": "text/html; charset=utf-8",
+              "Cache-Control": "public, max-age=3600",
+              ...corsHeaders,
+              ...SECURITY_HEADERS,
+            },
+          });
+        }
+
         if (url.pathname === "/playground" && request.method === "GET") {
           const html = getPlaygroundHTML(url.origin);
           return new Response(html, {
