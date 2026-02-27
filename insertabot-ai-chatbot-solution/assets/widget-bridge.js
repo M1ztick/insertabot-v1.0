@@ -6,32 +6,31 @@
   var apiBase = script && script.getAttribute('data-api-base');
 
   /**
-   * Sanitize token to prevent XSS
+   * Validate API key format to prevent XSS
    */
-  function sanitizeToken(token) {
-    if (!token || typeof token !== 'string') {
+  function validateApiKey(key) {
+    if (!key || typeof key !== 'string') {
       return null;
     }
-    // Only allow alphanumeric, hyphens, underscores (common token format)
-    if (!/^[a-zA-Z0-9_-]+$/.test(token)) {
-      console.error('[Insertabot] Invalid token format detected');
+    // Insertabot keys start with ib_sk_ followed by hex characters
+    if (!/^ib_sk_[a-zA-Z0-9_-]+$/.test(key)) {
+      console.error('[Insertabot] Invalid API key format');
       return null;
     }
-    return token;
+    return key;
   }
 
   /**
-   * Load remote widget script
+   * Load remote widget script with the API key passed as data-api-key
    */
-  function loadRemote(token) {
+  function loadRemote(apiKey) {
     try {
       var s = document.createElement('script');
       s.async = true;
 
-      // Safely construct script URL with validation
+      // Validate and construct the widget script URL
       var baseUrl = '';
       if (apiBase && typeof apiBase === 'string') {
-        // Validate URL to prevent XSS
         try {
           var url = new URL(apiBase);
           if (url.protocol === 'https:' || url.protocol === 'http:') {
@@ -42,25 +41,30 @@
           return;
         }
       }
-      s.src = baseUrl + '/widget.js';
 
-      // Sanitize token before setting attribute
-      if (token) {
-        var sanitizedToken = sanitizeToken(token);
-        if (sanitizedToken) {
-          s.setAttribute('data-widget-token', encodeURIComponent(sanitizedToken));
-        } else {
-          console.warn('[Insertabot] Token validation failed, loading without token');
-        }
+      if (!baseUrl) {
+        console.error('[Insertabot] No valid API base URL');
+        return;
       }
 
-      // Add error handling for script loading
+      s.src = baseUrl + '/widget.js';
+
+      // Pass the API key as data-api-key so widget.js can authenticate
+      if (apiKey) {
+        var validKey = validateApiKey(apiKey);
+        if (validKey) {
+          s.setAttribute('data-api-key', validKey);
+        } else {
+          console.error('[Insertabot] API key validation failed, widget will not load');
+          return;
+        }
+      } else {
+        console.error('[Insertabot] No API key available, widget will not load');
+        return;
+      }
+
       s.onerror = function () {
         console.error('[Insertabot] Failed to load widget script from: ' + s.src);
-      };
-
-      s.onload = function () {
-        console.log('[Insertabot] Widget script loaded successfully');
       };
 
       document.head.appendChild(s);
@@ -70,65 +74,49 @@
   }
 
   if (!tokenEndpoint) {
-    // No endpoint configured: load remote script without exposing key
-    loadRemote();
+    console.error('[Insertabot] No token endpoint configured');
     return;
   }
 
-  // Create abort controller for fetch timeout (with browser support check)
+  // Fetch the API key from the WordPress REST endpoint
+  var fetchOptions = { credentials: 'same-origin' };
   var controller = null;
   var timeoutId = null;
-  var fetchOptions = { credentials: 'same-origin' };
 
-  // Only use AbortController if supported
   if (typeof AbortController !== 'undefined') {
     try {
       controller = new AbortController();
       fetchOptions.signal = controller.signal;
       timeoutId = setTimeout(function () {
         controller.abort();
-        console.warn('[Insertabot] Token request timed out');
-        loadRemote(); // Fallback to loading without token
-      }, 5000); // 5 second timeout
-    } catch (error) {
-      console.warn('[Insertabot] AbortController not available:', error);
+        console.error('[Insertabot] Token request timed out');
+      }, 5000);
+    } catch (e) {
+      // AbortController not supported, continue without timeout
     }
   }
 
-  fetch(tokenEndpoint, fetchOptions).then(function (res) {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-    if (!res.ok) {
-      throw new Error('Token request failed with status: ' + res.status);
-    }
-    try {
-      return res.json();
-    } catch (e) {
-      throw new Error('Invalid JSON response');
-    }
-  }).then(function (json) {
-    if (json && json.token) {
-      var sanitizedToken = sanitizeToken(json.token);
-      if (sanitizedToken) {
-        loadRemote(sanitizedToken);
-      } else {
-        console.error('[Insertabot] Token validation failed');
-        loadRemote();
+  fetch(tokenEndpoint, fetchOptions)
+    .then(function (res) {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (!res.ok) {
+        throw new Error('Token request failed with status: ' + res.status);
       }
-    } else {
-      console.warn('[Insertabot] No token in response');
-      loadRemote();
-    }
-  }).catch(function (error) {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-    if (error && error.name === 'AbortError') {
-      console.error('[Insertabot] Token request aborted due to timeout');
-    } else {
-      console.error('[Insertabot] Token request failed:', error && error.message ? error.message : 'Unknown error');
-    }
-    loadRemote();
-  });
+      return res.json();
+    })
+    .then(function (json) {
+      if (json && json.api_key) {
+        loadRemote(json.api_key);
+      } else {
+        console.error('[Insertabot] No API key in response');
+      }
+    })
+    .catch(function (error) {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (error && error.name === 'AbortError') {
+        console.error('[Insertabot] Token request timed out');
+      } else {
+        console.error('[Insertabot] Token request failed:', error && error.message ? error.message : 'Unknown error');
+      }
+    });
 })();
