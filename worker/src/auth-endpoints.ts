@@ -141,6 +141,7 @@ export interface LoginResponse {
   requires_2fa?: boolean;
   temp_token?: string; // Temporary token for 2FA verification
   message: string;
+  email_verified?: boolean;
 }
 
 /**
@@ -182,15 +183,6 @@ export async function handleLogin(
     throw new AuthenticationError(
       ErrorCode.INVALID_API_KEY,
       "Invalid email or password"
-    );
-  }
-
-  // Check if email is verified - enforce email verification before login
-  if (customer.email_verified === 0) {
-    throw new AppError(
-      ErrorCode.INVALID_REQUEST,
-      "Please verify your email address before logging in. Check your inbox for the verification email.",
-      403
     );
   }
 
@@ -407,6 +399,7 @@ export async function handleLogin(
       success: true,
       session_id: session.session_id,
       message: "Login successful",
+      email_verified: customer.email_verified === 1,
     },
     sessionCookie: createSessionCookie(session.session_id, 24, true),
   };
