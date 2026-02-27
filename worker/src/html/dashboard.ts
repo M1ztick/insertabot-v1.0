@@ -686,12 +686,14 @@ export function getDashboardHTML(
           Visit <a href="https://insertabot.io" target="_blank" rel="noopener noreferrer" style="color:var(--cyan);">insertabot.io</a> and ask our assistant anything — installation help, troubleshooting, billing questions, and more.
         </p>
       </div>
+      ${customer.plan_type === 'owner' ? `
       <div style="padding:12px 16px;background:rgba(255,0,255,0.05);border:1px solid rgba(255,0,255,0.2);border-radius:10px;">
         <strong style="color:var(--magenta);">Playground</strong>
         <p style="color:var(--muted);font-size:0.85rem;margin:4px 0 0;">
-          ${customer.plan_type === 'owner' ? `Use the <button onclick="showTab('playground')" style="background:none;border:none;color:var(--magenta);cursor:pointer;padding:0;font-weight:700;font-size:0.85rem;">Playground tab</button> above to test and explore your bot configuration in real time.` : `Upgrade to Pro to unlock the Playground — a live sandbox to test your bot and get guided help from the AI.`}
+          Use the <button onclick="showTab('playground')" style="background:none;border:none;color:var(--magenta);cursor:pointer;padding:0;font-weight:700;font-size:0.85rem;">Playground tab</button> above to test and explore your bot configuration in real time.
         </p>
       </div>
+      ` : ''}
       <div style="padding:12px 16px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
         <a href="https://insertabot.io/docs" target="_blank" rel="noopener noreferrer" style="color:var(--cyan);font-size:0.85rem;">📄 Documentation</a>
         <span style="color:var(--border);">|</span>
