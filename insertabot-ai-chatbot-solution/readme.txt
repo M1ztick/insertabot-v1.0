@@ -60,11 +60,12 @@ Add a customizable AI chatbot to your WordPress site. Real-time web search, unli
 1. **Install Plugin** - Download and activate from WordPress.org
 2. **Get API Key** - Sign up free at insertabot.io
 3. **Paste & Enable** - Enter your API key and toggle on
-4. **Done!** - Your AI chatbot is now live on your site
+4. **Embed Site Tag** - Copy the embed code from your dashboard and paste it in your site footer
+5. **Done!** - Your AI chatbot is now live on your site
 
 ###  Why Users Love It
 
-> "Set up in 3 minutes. Visitors are actually using it. Best $10/month I spend." - Sarah, blogger
+> "Set up in 5 minutes. Visitors are actually using it. Best $10/month I spend." - Sarah, blogger
 
 > "The real-time web search is a game changer. Answers are always current." - Mike, e-commerce owner
 
@@ -146,7 +147,8 @@ No credit card required. 20 messages per day included.
 5. Go to **Insertabot** in your admin menu
 6. Get your free API key from [insertabot.io](https://insertabot.io/signup)
 7. Paste your API key and enable the chatbot
-8. Done!
+8. Copy the **Embed Code** script tag from your [dashboard](https://insertabot.io/dashboard) and paste it before the closing `</body>` tag — the easiest way is with the free **Insert Headers and Footers** plugin
+9. Done!
 
 ### Manual Installation
 
@@ -155,7 +157,7 @@ No credit card required. 20 messages per day included.
 3. Go to **Plugins** > **Add New** > **Upload Plugin**
 4. Choose the zip file and click **Install Now**
 5. Click **Activate Plugin**
-6. Follow steps 5-8 from automatic installation above
+6. Follow steps 5-9 from automatic installation above
 
 == Frequently Asked Questions ==
 

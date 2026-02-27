@@ -278,15 +278,22 @@ export function getDocsHTML(origin: string): string {
       <div class="step">
         <div class="step-num">4</div>
         <div class="step-body">
-          <strong>Copy your API key</strong>
-          <p>Log in to your <a href="${origin}/dashboard">dashboard</a> and copy the API key shown at the top of the page.</p>
+          <strong>Copy your API key and embed code</strong>
+          <p>Log in to your <a href="${origin}/dashboard">dashboard</a>. You'll find your <strong>API Key</strong> and an <strong>Embed Code</strong> section — keep this tab open, you'll need both in the next steps.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-num">5</div>
         <div class="step-body">
-          <strong>Paste the key &amp; enable the chatbot</strong>
-          <p>In WordPress go to <em>Settings → Insertabot</em>, paste your API key, toggle <strong>Enable Chatbot</strong> on, and click Save. The widget will appear on your site immediately.</p>
+          <strong>Paste the API key &amp; enable the chatbot</strong>
+          <p>In WordPress go to <em>Settings → Insertabot</em>, paste your API key, toggle <strong>Enable Chatbot</strong> on, and click Save.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">6</div>
+        <div class="step-body">
+          <strong>Add the embed code to your site footer</strong>
+          <p>Back in your dashboard, copy the script tag from the <strong>Embed Code</strong> section. Paste it before the closing <code>&lt;/body&gt;</code> tag on your site. The easiest way on WordPress is with the free <strong>Insert Headers and Footers</strong> plugin — paste the script into the Footer section and save. The chat widget will appear once this step is complete.</p>
         </div>
       </div>
     </div>
@@ -301,6 +308,7 @@ export function getDocsHTML(origin: string): string {
         <summary>The chat widget isn't showing on my site</summary>
         <div class="faq-body">
           <ul>
+            <li>Make sure you completed <strong>Step 6</strong> — the embed code script tag must be added to your site's footer. Without it, the widget will not load even if the plugin is active and the API key is correct. Use the free <strong>Insert Headers and Footers</strong> plugin to add it.</li>
             <li>Confirm the plugin is active and the API key is saved correctly in <em>Settings → Insertabot</em>.</li>
             <li>Check the <strong>Allowed Domains</strong> field in your dashboard. If it's set, your site's domain must be listed exactly (e.g. <code>mysite.com</code> — no https:// or trailing slash). Leave it blank to allow all domains.</li>
             <li>Disable any caching plugins temporarily and hard-refresh (<code>Ctrl+Shift+R</code> / <code>Cmd+Shift+R</code>) to rule out a cached page.</li>
