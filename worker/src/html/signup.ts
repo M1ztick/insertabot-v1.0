@@ -169,6 +169,11 @@ export function getSignupHTML(): string {
         .requirement.met {
             color: #00ff88;
         }
+        .field-hint {
+            margin-top: 6px;
+            font-size: 11px;
+            color: #64748b;
+        }
     </style>
 </head>
 <body>
@@ -186,6 +191,16 @@ export function getSignupHTML(): string {
             <div class="form-group">
                 <label>Company Name</label>
                 <input type="text" name="company_name" required placeholder="Your Company" />
+            </div>
+            <div class="form-group">
+                <label>Website URL <span style="color:#00f5ff;">*</span></label>
+                <input
+                    type="url"
+                    name="site_url"
+                    required
+                    placeholder="https://yoursite.com"
+                />
+                <div class="field-hint">Where you'll embed the chatbot. You can add more domains later in your dashboard.</div>
             </div>
             <div class="form-group">
                 <label>Password</label>
