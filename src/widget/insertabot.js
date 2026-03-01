@@ -2,8 +2,14 @@
  * Insertabot Embeddable Widget
  * Single script tag integration for any website
  *
- * Usage:
- * <script src="https://cdn.insertabot.io/widget.js" data-api-key="ib_sk_your_key_here"></script>
+ * Usage (via widget-bridge.js — the bridge handles token exchange):
+ * <script src="https://your-worker.example.com/widget.js"
+ *         data-session-token="wt_..."
+ *         data-api-base="https://your-worker.example.com"></script>
+ *
+ * The widget authenticates using a short-lived session token (X-Widget-Token
+ * header) obtained by widget-bridge.js.  The raw api_key is never present in
+ * the browser at any point.
  */
 
 (function() {
@@ -11,15 +17,25 @@
 
   // Configuration
   const SCRIPT_TAG = document.currentScript;
-  const API_KEY = SCRIPT_TAG?.getAttribute('data-api-key');
-  // Default API_BASE to the same origin as the script, or allow override via data-api-base
+
+  // Accept a short-lived session token issued by the worker's token-exchange
+  // endpoint.  Fall back to a legacy data-api-key only if explicitly present
+  // so that direct / playground integrations keep working during migration.
+  const SESSION_TOKEN = SCRIPT_TAG?.getAttribute('data-session-token');
+  const LEGACY_API_KEY = SCRIPT_TAG?.getAttribute('data-api-key');
+
+  // Prefer session token; fall back to legacy api key.
+  const AUTH_TOKEN  = SESSION_TOKEN || LEGACY_API_KEY || null;
+  const AUTH_MODE   = SESSION_TOKEN ? 'session' : (LEGACY_API_KEY ? 'legacy' : null);
+
+  // Default API_BASE to the same origin as the script, or allow override.
   const SCRIPT_ORIGIN = SCRIPT_TAG ? new URL(SCRIPT_TAG.src).origin : window.location.origin;
   const API_BASE = SCRIPT_TAG?.getAttribute('data-api-base') || SCRIPT_ORIGIN;
   const DEBUG = SCRIPT_TAG?.getAttribute('data-debug') === 'true';
 
   // Validation
-  if (!API_KEY) {
-    console.error('[Insertabot] Missing data-api-key attribute');
+  if (!AUTH_TOKEN) {
+    console.error('[Insertabot] Missing data-session-token attribute');
     return;
   }
 
@@ -47,12 +63,22 @@
   /**
    * Fetch widget configuration from API
    */
+  /**
+   * Build auth headers depending on whether we have a session token or a
+   * legacy api key.  The raw key is never exposed when AUTH_MODE === 'session'.
+   */
+  function buildAuthHeaders() {
+    if (AUTH_MODE === 'session') {
+      return { 'X-Widget-Token': AUTH_TOKEN };
+    }
+    // Legacy direct-integration path (dashboard playground, non-WP sites).
+    return { 'X-API-Key': AUTH_TOKEN };
+  }
+
   async function fetchConfig() {
     try {
       const response = await fetch(`${API_BASE}/v1/widget/config`, {
-        headers: {
-          'X-API-Key': API_KEY,
-        },
+        headers: buildAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -562,7 +588,7 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': API_KEY,
+          ...buildAuthHeaders(),
         },
         body: JSON.stringify(requestBody),
         signal: abortController.signal,
