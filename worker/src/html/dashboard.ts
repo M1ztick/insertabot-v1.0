@@ -1,4 +1,3 @@
-
 /**
  * Customer Dashboard HTML
  * Improved for accessibility, maintainability, and UX
@@ -557,6 +556,24 @@ export function getDashboardHTML(
     </article>
   </section>
 
+  ${customer.plan_type === 'free' ? `
+  <section class="card" style="margin-bottom:24px;background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(0,245,255,0.08));border:1px solid rgba(99,102,241,0.35);">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+      <div>
+        <h2 style="margin-bottom:6px;">⚡ Upgrade to Pro</h2>
+        <p style="color:var(--muted);font-size:0.88rem;margin:0;">
+          500 messages/day &nbsp;·&nbsp; Priority support &nbsp;·&nbsp; $9.99/month
+        </p>
+      </div>
+      <button
+        id="upgrade-btn"
+        onclick="upgradeToPro()"
+        style="background:linear-gradient(135deg,#6366f1,#06b6d4);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-weight:700;font-size:0.95rem;cursor:pointer;white-space:nowrap;transition:opacity 0.2s;"
+      >Upgrade Now</button>
+    </div>
+  </section>
+  ` : ''}
+
   <section class="card" style="margin-bottom:24px;">
     <h2>📝 Embed Code</h2>
     <p style="color:var(--muted);font-size:0.85rem;margin-bottom:12px;">
@@ -765,6 +782,31 @@ export function getDashboardHTML(
 <script>
   // Store backup codes globally for download
   let backupCodesGlobal = [];
+
+  async function upgradeToPro() {
+    const btn = document.getElementById('upgrade-btn');
+    btn.disabled = true;
+    btn.textContent = 'Redirecting…';
+    try {
+      const res = await fetch('/api/checkout/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || 'Something went wrong. Please try again.');
+        btn.disabled = false;
+        btn.textContent = 'Upgrade Now';
+      }
+    } catch (err) {
+      alert('Network error. Please try again.');
+      btn.disabled = false;
+      btn.textContent = 'Upgrade Now';
+    }
+  }
 
   async function resendVerificationEmail() {
     try {
