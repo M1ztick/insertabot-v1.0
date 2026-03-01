@@ -50,7 +50,7 @@ function insertabot_widget_token_endpoint( WP_REST_Request $request ) {
     // 1. Rate-limit: max 20 token requests per IP per minute.            //
     // ------------------------------------------------------------------ //
     $client_ip = insertabot_get_request_ip();
-    $rate_key  = 'insertabot_token_rl_' . md5( $client_ip );
+    $rate_key  = 'insertabot_token_rl_' . hash( 'sha256', $client_ip );
     $hits      = (int) get_transient( $rate_key );
 
     if ( $hits >= 20 ) {

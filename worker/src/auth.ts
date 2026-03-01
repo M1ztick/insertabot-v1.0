@@ -78,7 +78,13 @@ export async function verifyPassword(
 	const hashArray = Array.from(new Uint8Array(hashBuffer));
 	const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-	return hash === storedHash;
+	// Constant-time comparison to prevent timing attacks
+	if (hash.length !== storedHash.length) return false;
+	let result = 0;
+	for (let i = 0; i < hash.length; i++) {
+		result |= hash.charCodeAt(i) ^ storedHash.charCodeAt(i);
+	}
+	return result === 0;
 }
 
 /**

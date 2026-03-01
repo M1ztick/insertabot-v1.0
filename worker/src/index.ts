@@ -517,7 +517,7 @@ async function getCustomerConfig(
   apiKey: string
 ): Promise<CustomerConfig> {
   if (!validateApiKey(apiKey)) {
-    throw new AuthenticationError(ErrorCode.INVALID_API_KEY, 'Invalid API key format');
+    throw new AuthenticationError(ErrorCode.INVALID_API_KEY, 'Authentication failed');
   }
   
   const config = await fetchSingle(
@@ -529,7 +529,7 @@ async function getCustomerConfig(
   ) as CustomerConfig | null;
   
   if (!config) {
-    throw new AuthenticationError(ErrorCode.INVALID_API_KEY, 'Invalid or inactive API key');
+    throw new AuthenticationError(ErrorCode.INVALID_API_KEY, 'Authentication failed');
   }
   
   return config;
@@ -1616,14 +1616,14 @@ export default {
           .bind(widgetCustomerId)
           .first() as CustomerConfig | null;
         if (!row) {
-          throw new AuthenticationError(ErrorCode.INVALID_API_KEY, 'Invalid or expired widget session');
+          throw new AuthenticationError(ErrorCode.INVALID_API_KEY, 'Authentication failed');
         }
         customerConfig = row;
       } else {
         // Legacy api_key path (dashboard, direct integrations, playground, etc.)
         apiKey = getApiKey(request);
         if (!apiKey) {
-          throw new AuthenticationError(ErrorCode.MISSING_API_KEY, 'Missing API key or widget session token');
+          throw new AuthenticationError(ErrorCode.MISSING_API_KEY, 'Authentication required');
         }
         customerConfig = await getCustomerConfig(env.DB, apiKey);
       }
@@ -1783,7 +1783,7 @@ export default {
             ) as { email: string } | null;
 
             if (!customerData) {
-              throw new AuthenticationError(ErrorCode.INVALID_API_KEY, 'Customer not found');
+              throw new AuthenticationError(ErrorCode.INVALID_API_KEY, 'Authentication failed');
             }
 
             const result = await handleEnable2FA(env.DB, sessionCustomerId, customerData.email, clientIP, request.headers.get('User-Agent'));

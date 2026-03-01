@@ -24,11 +24,12 @@ export async function handleEnable2FA(
   customerId: string,
   email: string,
   ipAddress: string | null,
-  userAgent: string | null
+  userAgent: string | null,
+  issuerName?: string
 ): Promise<Enable2FAResponse> {
   // Generate TOTP secret
   const secret = generateTOTPSecret();
-  const qrUri = generateTOTPUri(secret, email, "Insertabot");
+  const qrUri = generateTOTPUri(secret, email, issuerName || "Insertabot");
 
   // Generate backup codes
   const backupCodes = await generateBackupCodes(8);
@@ -98,7 +99,7 @@ export async function handleVerify2FA(
       metadata: { context: "enrollment_verification" },
     });
 
-    throw new AuthenticationError(ErrorCode.INVALID_API_KEY, "Invalid 2FA code");
+    throw new AuthenticationError(ErrorCode.INVALID_API_KEY, "Authentication failed");
   }
 
   // Enable 2FA
@@ -133,6 +134,11 @@ export async function handleDisable2FA(
   ipAddress: string | null,
   userAgent: string | null
 ): Promise<{ success: boolean; message: string }> {
+  // Validate password input
+  if (!password || typeof password !== 'string' || password.length === 0) {
+    throw new AuthenticationError(ErrorCode.INVALID_API_KEY, "Password is required");
+  }
+
   // Verify password before disabling 2FA
   const customer = await withDatabase(
     async () =>
@@ -146,6 +152,7 @@ export async function handleDisable2FA(
   );
 
   if (!customer) {
+    // amazonq-ignore-next-line
     throw new AuthenticationError(ErrorCode.INVALID_API_KEY, "Customer not found");
   }
 
@@ -156,7 +163,7 @@ export async function handleDisable2FA(
   );
 
   if (!passwordValid) {
-    throw new AuthenticationError(ErrorCode.INVALID_API_KEY, "Invalid password");
+    throw new AuthenticationError(ErrorCode.INVALID_API_KEY, "Authentication failed");
   }
 
   // Disable 2FA

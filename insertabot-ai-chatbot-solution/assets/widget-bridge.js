@@ -40,6 +40,18 @@
    * @returns {Promise<Response>}
    */
   function fetchWithTimeout(url, options, ms) {
+    // Validate URL to prevent SSRF
+    var validatedUrl;
+    try {
+      var parsedUrl = new URL(url);
+      if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') {
+        throw new Error('Invalid URL protocol');
+      }
+      validatedUrl = parsedUrl.href;
+    } catch (e) {
+      return Promise.reject(new Error('Invalid URL: ' + e.message));
+    }
+
     var controller = null;
     var tid        = null;
     var opts       = options || {};
@@ -56,7 +68,7 @@
       }
     }
 
-    return fetch(url, opts).then(function (res) {
+    return fetch(validatedUrl, opts).then(function (res) {
       if (tid) clearTimeout(tid);
       return res;
     }, function (err) {

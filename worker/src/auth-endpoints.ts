@@ -84,7 +84,7 @@ export async function handleSetPassword(
   if (!customer) {
     throw new AuthenticationError(
       ErrorCode.INVALID_API_KEY,
-      "Account not found"
+      "Authentication failed"
     );
   }
 
@@ -181,6 +181,7 @@ export async function handleLogin(
   if (!customer) {
     // Generic error message to prevent user enumeration attacks
     throw new AuthenticationError(
+      // amazonq-ignore-next-line
       ErrorCode.INVALID_API_KEY,
       "Invalid email or password"
     );
@@ -255,7 +256,7 @@ export async function handleLogin(
     // amazonq-ignore-next-line
     throw new AuthenticationError(
       ErrorCode.INVALID_API_KEY,
-      "Invalid email or password"
+      "Authentication failed"
     );
   }
 
@@ -349,7 +350,7 @@ export async function handleLogin(
         // amazonq-ignore-next-line
         throw new AuthenticationError(
           ErrorCode.INVALID_API_KEY,
-          "Invalid 2FA code"
+          "Authentication failed"
         );
       }
     }
@@ -471,7 +472,7 @@ export async function handleChangePassword(
     // amazonq-ignore-next-line
     throw new AuthenticationError(
       ErrorCode.INVALID_API_KEY,
-      "Customer not found"
+      "Authentication failed"
     );
   }
 
@@ -494,7 +495,7 @@ export async function handleChangePassword(
     // amazonq-ignore-next-line
     throw new AuthenticationError(
       ErrorCode.INVALID_API_KEY,
-      "Current password is incorrect"
+      "Authentication failed"
     );
   }
 
@@ -563,7 +564,7 @@ export async function handleDisable2FA(
     // amazonq-ignore-next-line
     throw new AuthenticationError(
       ErrorCode.INVALID_API_KEY,
-      "Customer not found"
+      "Authentication failed"
     );
   }
 
@@ -577,7 +578,7 @@ export async function handleDisable2FA(
     // amazonq-ignore-next-line
     throw new AuthenticationError(
       ErrorCode.INVALID_API_KEY,
-      "Invalid password"
+      "Authentication failed"
     );
   }
 

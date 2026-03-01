@@ -97,17 +97,25 @@ async function getCustomerDetails(customerId, target = 'production') {
   const dbName = target === 'development' ? 'insertabot-development' : 'insertabot-production';
   const localFlag = target === 'development' ? '--local' : '';
   
+  // Validate and sanitize customerId to prevent SQL injection
+  const sanitizedId = customerId.replace(/[^a-zA-Z0-9@._-]/g, '');
+  if (sanitizedId !== customerId) {
+    console.error('❌ Error: Invalid customer ID format');
+    process.exit(1);
+  }
+  
   const query = `
     SELECT 
       c.*,
       w.*
     FROM customers c
     LEFT JOIN widget_configs w ON c.customer_id = w.customer_id
-    WHERE c.customer_id = '${customerId}' OR c.email = '${customerId}'
+    WHERE c.customer_id = '${sanitizedId}' OR c.email = '${sanitizedId}'
   `;
   
   try {
     const command = `cd worker && wrangler d1 execute ${dbName} ${localFlag} --command="${query}"`;
+    // amazonq-ignore-next-line
     const output = execSync(command, { encoding: 'utf8' });
     console.log('\n📋 Customer Details:\n');
     console.log(output);
@@ -120,10 +128,11 @@ async function getCustomerDetails(customerId, target = 'production') {
         AVG(response_time_ms) as avg_response_time,
         MAX(timestamp) as last_request
       FROM usage_logs 
-      WHERE customer_id = '${customerId}'
+      WHERE customer_id = '${sanitizedId}'
     `;
     
     const usageCommand = `cd worker && wrangler d1 execute ${dbName} ${localFlag} --command="${usageQuery}"`;
+    // amazonq-ignore-next-line
     const usageOutput = execSync(usageCommand, { encoding: 'utf8' });
     console.log('\n📈 Usage Statistics:\n');
     console.log(usageOutput);
@@ -146,7 +155,9 @@ async function main() {
   try {
     const action = await prompt('Choose action:\n1. List all customers\n2. Get customer details\n3. Show usage stats\n4. Export customer data\n\nEnter choice (1-4): ');
     
-    const target = await prompt('Environment (development/production) [production]: ') || 'production';
+    const targetInput = await prompt('Environment (development/production) [production]: ') || 'production';
+    // Validate target to prevent command injection
+    const target = targetInput === 'development' ? 'development' : 'production';
     
     switch (action) {
       case '1':

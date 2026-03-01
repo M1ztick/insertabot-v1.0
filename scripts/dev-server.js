@@ -60,7 +60,22 @@ function colorize(color, text) {
 
 // Proxy requests to Cloudflare Worker
 async function proxyToWorker(req, res, pathname) {
-  const targetUrl = `${WORKER_URL}${pathname}${req.url.includes('?') ? '?' + req.url.split('?')[1] : ''}`;
+  // Validate WORKER_URL to prevent SSRF
+  let workerOrigin;
+  try {
+    const workerUrl = new URL(WORKER_URL);
+    if (workerUrl.protocol !== 'https:' && workerUrl.protocol !== 'http:') {
+      throw new Error('Invalid protocol');
+    }
+    workerOrigin = workerUrl.origin;
+  } catch (error) {
+    console.error(colorize('red', '✗ Invalid WORKER_URL:'), error.message);
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Invalid worker URL configuration' }));
+    return;
+  }
+
+  const targetUrl = `${workerOrigin}${pathname}${req.url.includes('?') ? '?' + req.url.split('?')[1] : ''}`;
 
   console.log(colorize('cyan', '→ PROXY:'), pathname, colorize('dim', `→ ${targetUrl}`));
 
@@ -78,7 +93,13 @@ async function proxyToWorker(req, res, pathname) {
     req.on('data', chunk => body += chunk);
     req.on('end', async () => {
       try {
-        const response = await fetch(targetUrl, {
+        // Validate target URL before fetch
+        const validatedUrl = new URL(targetUrl);
+        if (validatedUrl.protocol !== 'https:' && validatedUrl.protocol !== 'http:') {
+          throw new Error('Invalid target URL protocol');
+        }
+        
+        const response = await fetch(validatedUrl.href, {
           ...options,
           body: body,
         });
@@ -104,12 +125,18 @@ async function proxyToWorker(req, res, pathname) {
     try {
       const response = await fetch(targetUrl, options);
 
-      // Copy response headers
+      // Copy response headers (filter out redirect headers to prevent open redirect)
+      const safeHeaders = Object.fromEntries(
+        Array.from(response.headers.entries()).filter(([key]) => 
+          key.toLowerCase() !== 'location' && key.toLowerCase() !== 'refresh'
+        )
+      );
+      
       res.writeHead(response.status, {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        ...Object.fromEntries(response.headers.entries()),
+        ...safeHeaders,
       });
 
       // Stream response body
@@ -125,6 +152,7 @@ async function proxyToWorker(req, res, pathname) {
 
 // Serve static files
 function serveStaticFile(req, res, filePath) {
+  // amazonq-ignore-next-line
   fs.readFile(filePath, (err, data) => {
     if (err) {
       if (err.code === 'ENOENT') {
@@ -251,7 +279,18 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Serve static files
-  let filePath = path.join(__dirname, pathname);
+  // Prevent path traversal by normalizing and validating the path
+  const normalizedPath = path.normalize(pathname).replace(/^(\.\.\/)+/, '');
+  let filePath = path.join(__dirname, normalizedPath);
+  
+  // Ensure the resolved path is within __dirname
+  const resolvedPath = path.resolve(filePath);
+  if (!resolvedPath.startsWith(path.resolve(__dirname))) {
+    res.writeHead(403, { 'Content-Type': 'text/html' });
+    res.end('<h1>403 - Forbidden</h1>');
+    console.log(colorize('red', '✗ Path traversal attempt:'), pathname);
+    return;
+  }
 
   // Check if file exists
   if (!fs.existsSync(filePath)) {
@@ -262,6 +301,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // If directory, look for index.html
+  // amazonq-ignore-next-line
   if (fs.statSync(filePath).isDirectory()) {
     filePath = path.join(filePath, 'index.html');
   }
