@@ -14,15 +14,27 @@ export interface Customer {
 	status: string;
 }
 
+function normalizeDomain(url: string): string {
+	try {
+		const parsed = new URL(url.trim());
+		return parsed.hostname; // e.g. "yoursite.com" — strips protocol, path, trailing commas
+	} catch {
+		// Fallback: strip protocol and path manually
+		return url.trim().replace(/^https?:\/\//, '').split('/')[0].split(',')[0].trim();
+	}
+}
+
 export async function createCustomer(
 	db: D1Database,
 	email: string,
-	companyName: string
+	companyName: string,
+	siteUrl?: string
 ): Promise<Customer | null> {
 	return withDatabase(async () => {
 		const customerId = 'cust_' + generateApiKey().slice(6, 22);
 		const apiKey = generateApiKey();
 		const now = Math.floor(Date.now() / 1000);
+		const allowedDomain = siteUrl ? normalizeDomain(siteUrl) : null;
 
 		// Free tier: 5 messages/hour, 20 messages/day
 		await db.prepare(`
@@ -31,9 +43,9 @@ export async function createCustomer(
 		`).bind(customerId, email, companyName, apiKey, now, now).run();
 
 		await db.prepare(`
-			INSERT INTO widget_configs (customer_id, created_at, updated_at)
-			VALUES (?, ?, ?)
-		`).bind(customerId, now, now).run();
+			INSERT INTO widget_configs (customer_id, allowed_domains, created_at, updated_at)
+			VALUES (?, ?, ?, ?)
+		`).bind(customerId, allowedDomain, now, now).run();
 
 		return {
 			customer_id: customerId,
