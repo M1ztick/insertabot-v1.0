@@ -38,7 +38,9 @@ export async function sendEmail(options: EmailOptions, env: { RESEND_API_KEY?: s
 
 		if (!response.ok) {
 			const errorText = await response.text();
-			console.error('Resend error:', errorText);
+			// Sanitize error text to prevent log injection
+			const sanitizedError = errorText.replace(/[\r\n]/g, ' ').substring(0, 200);
+			console.error('Resend error:', sanitizedError);
 			return {
 				success: false,
 				error: `Email service error: ${response.status}`,

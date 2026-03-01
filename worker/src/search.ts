@@ -64,9 +64,10 @@ export async function performWebSearch(
 
     if (!response.ok) {
       const errorText = await response.text();
+      const sanitizedError = errorText.replace(/[\r\n]/g, ' ').substring(0, 200);
       console.error(
         `[Search] Tavily API error: ${response.status} ${response.statusText}`,
-        errorText,
+        sanitizedError,
       );
 
       // Check if it's a PII error
@@ -84,6 +85,7 @@ export async function performWebSearch(
     }
 
     const data: TavilySearchResponse = await response.json();
+    // amazonq-ignore-next-line
     console.log(`[Search] Received ${data.results?.length || 0} results`);
 
     // Extract and format results
@@ -96,7 +98,8 @@ export async function performWebSearch(
       published_date: result.published_date,
     }));
   } catch (error) {
-    console.error("[Search] Web search error:", error);
+    const errorMsg = error instanceof Error ? error.message.replace(/[\r\n]/g, ' ').substring(0, 200) : 'Unknown error';
+    console.error("[Search] Web search error:", errorMsg);
     throw error; // Re-throw so caller can handle it
   }
 }

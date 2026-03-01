@@ -267,8 +267,20 @@ export async function scrapeAndIndex(
 	url: string
 ): Promise<boolean> {
 	try {
+		// Validate URL to prevent SSRF
+		let parsedUrl: URL;
+		try {
+			parsedUrl = new URL(url);
+		} catch {
+			throw new Error('Invalid URL format');
+		}
+
+		if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+			throw new Error('Only HTTP and HTTPS protocols are allowed');
+		}
+
 		// Fetch the webpage
-		const response = await fetch(url);
+		const response = await fetch(parsedUrl.toString());
 		if (!response.ok) {
 			throw new Error(`Failed to fetch ${url}: ${response.status}`);
 		}

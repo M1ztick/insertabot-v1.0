@@ -352,11 +352,13 @@ export class PerformanceProfiler {
     if (result instanceof Promise) {
       return result.finally(() => {
         const duration = this.end(name);
-        console.log(`Performance: ${name} took ${duration}ms`);
+        const sanitizedName = String(name).replace(/[\r\n]/g, ' ').substring(0, 100);
+        console.log(`Performance: ${sanitizedName} took ${duration}ms`);
       });
     } else {
       const duration = this.end(name);
-      console.log(`Performance: ${name} took ${duration}ms`);
+      const sanitizedName = String(name).replace(/[\r\n]/g, ' ').substring(0, 100);
+      console.log(`Performance: ${sanitizedName} took ${duration}ms`);
       return result;
     }
   }
@@ -373,28 +375,41 @@ export class StructuredLogger {
   ) {}
 
   private async log(level: string, message: string, metadata?: Record<string, any>): Promise<void> {
+    // Sanitize message to prevent log injection
+    const sanitizedMessage = message.replace(/[\r\n]/g, ' ').substring(0, 1000);
+    
+    // Sanitize metadata values
+    const sanitizedMetadata = metadata ? Object.fromEntries(
+      Object.entries(metadata).map(([key, value]) => [
+        key,
+        typeof value === 'string' ? value.replace(/[\r\n]/g, ' ').substring(0, 500) : value
+      ])
+    ) : undefined;
+    
     const logEntry = {
       timestamp: new Date().toISOString(),
       level,
       service: this.service,
       environment: this.environment,
-      message,
-      metadata
+      message: sanitizedMessage,
+      metadata: sanitizedMetadata
     };
 
     // Console log
+    // amazonq-ignore-next-line
     console.log(JSON.stringify(logEntry));
 
     // Send to analytics if available
     if (this.analytics) {
       try {
         this.analytics.writeDataPoint({
-          blobs: [level, this.service, message],
+          blobs: [level, this.service, sanitizedMessage],
           doubles: [Date.now()],
           indexes: [level, this.service]
         });
       } catch (error) {
-        console.error('Failed to send log to analytics:', error);
+        const errorMsg = error instanceof Error ? error.message.replace(/[\r\n]/g, ' ').substring(0, 200) : 'Unknown error';
+        console.error('Failed to send log to analytics:', errorMsg);
       }
     }
   }

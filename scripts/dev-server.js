@@ -123,7 +123,13 @@ async function proxyToWorker(req, res, pathname) {
     });
   } else {
     try {
-      const response = await fetch(targetUrl, options);
+      // Validate target URL before fetch
+      const validatedUrl = new URL(targetUrl);
+      if (validatedUrl.protocol !== 'https:' && validatedUrl.protocol !== 'http:') {
+        throw new Error('Invalid target URL protocol');
+      }
+      
+      const response = await fetch(validatedUrl.href, options);
 
       // Copy response headers (filter out redirect headers to prevent open redirect)
       const safeHeaders = Object.fromEntries(

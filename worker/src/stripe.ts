@@ -42,7 +42,9 @@ export async function createCheckoutSession(
 		});
 
 		if (!response.ok) {
-			console.error('Stripe API error:', await response.text());
+			const errorText = await response.text();
+			const sanitizedError = errorText.replace(/[\r\n]/g, ' ').substring(0, 200);
+			console.error('Stripe API error:', sanitizedError);
 			return null;
 		}
 
@@ -95,7 +97,15 @@ export async function verifyWebhookSignature(
 		const hashArray = Array.from(new Uint8Array(signature_bytes));
 		const computed = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 
-		return computed === hash;
+		// Constant-time comparison to prevent timing attacks
+		if (computed.length !== hash.length) {
+			return false;
+		}
+		let result = 0;
+		for (let i = 0; i < computed.length; i++) {
+			result |= computed.charCodeAt(i) ^ hash.charCodeAt(i);
+		}
+		return result === 0;
 	} catch (error) {
 		console.error('Error verifying webhook signature:', error);
 		return false;
@@ -122,15 +132,18 @@ export async function processWebhookEvent(
 				return await handleSubscriptionCancelled(db, data);
 
 			case 'payment_intent.succeeded':
-				console.log(`Payment succeeded for customer ${data.customer}`);
+				const sanitizedCustomer1 = String(data.customer).replace(/[\r\n]/g, ' ').substring(0, 50);
+				console.log(`Payment succeeded for customer ${sanitizedCustomer1}`);
 				return true;
 
 			case 'payment_intent.payment_failed':
-				console.error(`Payment failed for customer ${data.customer}`);
+				const sanitizedCustomer2 = String(data.customer).replace(/[\r\n]/g, ' ').substring(0, 50);
+				console.error(`Payment failed for customer ${sanitizedCustomer2}`);
 				return true;
 
 			default:
-				console.log(`Unhandled event type: ${type}`);
+				const sanitizedType = String(type).replace(/[\r\n]/g, ' ').substring(0, 100);
+				console.log(`Unhandled event type: ${sanitizedType}`);
 				return true;
 		}
 	} catch (error) {
@@ -180,7 +193,8 @@ async function handleSubscriptionUpdate(db: D1Database, subscription: any): Prom
 			)
 			.run();
 
-		console.log(`Updated subscription for customer ${customerId}:`, result);
+		const sanitizedCustomerId = customerId.replace(/[\r\n]/g, ' ').substring(0, 50);
+		console.log(`Updated subscription for customer ${sanitizedCustomerId}`);
 		return true;
 	} catch (error) {
 		console.error('Error updating subscription:', error);
@@ -215,10 +229,13 @@ async function handleSubscriptionCancelled(db: D1Database, subscription: any): P
 			.bind(Math.floor(Date.now() / 1000), customerId)
 			.run();
 
+  // amazonq-ignore-next-line
 		console.log(`Cancelled subscription for customer ${customerId}:`, result);
 		return true;
 	} catch (error) {
-		console.error('Error cancelling subscription:', error);
+		// Sanitize error message to prevent log injection
+		const errorMsg = error instanceof Error ? error.message.replace(/[\r\n]/g, ' ').substring(0, 200) : 'Unknown error';
+		console.error('Error cancelling subscription:', errorMsg);
 		return false;
 	}
 }

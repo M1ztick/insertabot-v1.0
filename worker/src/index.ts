@@ -326,7 +326,7 @@ async function handleWidgetTokenExchange(
         `SELECT customer_id, api_key FROM customers WHERE customer_id = ? AND status = 'active'`
       ).bind(embeddedCustomerId).first() as { customer_id: string; api_key: string } | null;
 
-      if (row && row.api_key && /^ib_sk_[a-zA-Z0-9_]+$/.test(row.api_key)) {
+      if (row && row.api_key && API_KEY_RE.test(row.api_key)) {
         const expected = await hmacSha256Hex(payload, row.api_key);
         if (safeEqual(expected, providedHmac)) {
           matchedCustomerId = row.customer_id;
@@ -341,7 +341,7 @@ async function handleWidgetTokenExchange(
 
       if (rows?.results) {
         for (const row of rows.results as Array<{ customer_id: string; api_key: string }>) {
-          if (!row.api_key || !/^ib_sk_[a-zA-Z0-9_]+$/.test(row.api_key)) continue;
+          if (!row.api_key || !API_KEY_RE.test(row.api_key)) continue;
           const expected = await hmacSha256Hex(payload, row.api_key);
           if (safeEqual(expected, providedHmac)) {
             matchedCustomerId = row.customer_id;
@@ -652,6 +652,7 @@ function getFallbackResponse(widgetConfig: WidgetConfig): string {
 }
 
 const CONVERSATION_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const API_KEY_RE = /^ib_sk_[a-zA-Z0-9_]+$/;
 
 async function persistConversationData(
   db: D1Database,
@@ -1233,7 +1234,8 @@ export default {
             env
           );
           if (!verificationResult.success) {
-            console.error("Failed to send verification email after account creation for:", body.email);
+            const sanitizedEmail = body.email.replace(/[\r\n]/g, ' ').substring(0, 100);
+            console.error("Failed to send verification email after account creation for:", sanitizedEmail);
           }
 
           return new Response(

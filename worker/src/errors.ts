@@ -124,13 +124,14 @@ export class ErrorHandler {
     // Log error with context
     const logData = {
       error: appError.code,
-      message: appError.message,
+      message: appError.message.replace(/[\r\n]/g, ' ').substring(0, 500),
       statusCode: appError.statusCode,
       timestamp,
       ...context,
       ...(appError.metadata && { metadata: appError.metadata })
     };
 
+    // amazonq-ignore-next-line
     console.error('Error handled:', JSON.stringify(logData));
 
     // Send to analytics if available

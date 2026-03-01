@@ -212,7 +212,9 @@ export async function handleVerifyEmail(
 
 	// Send welcome email (non-blocking, don't wait for result)
 	sendWelcomeEmail(customer.email, customer.company_name, env).catch(err => {
-		console.error('Failed to send welcome email:', err);
+		// Sanitize error message to prevent log injection
+		const errorMsg = err instanceof Error ? err.message.replace(/[\r\n]/g, ' ').substring(0, 200) : 'Unknown error';
+		console.error('Failed to send welcome email:', errorMsg);
 	});
 
 	return {
