@@ -15,10 +15,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Insertabot Admin Settings Class
  */
 final class Insertabot_Admin_Settings {
-	public const PAGE_SLUG   = 'insertabot-settings';
-	public const OPTION_KEY  = 'insertabot_api_key';
-	public const OPTION_EN   = 'insertabot_enabled';
-	public const OPTION_BASE = 'insertabot_api_base';
+	public const PAGE_SLUG        = 'insertabot-settings';
+	public const OPTION_KEY       = 'insertabot_api_key';
+	public const OPTION_EN        = 'insertabot_enabled';
+	public const OPTION_BASE      = 'insertabot_api_base';
+	public const OPTION_CUST_ID   = 'insertabot_customer_id';
 
 	/**
 	 * Register admin hooks
@@ -116,6 +117,8 @@ final class Insertabot_Admin_Settings {
 			if (class_exists('Insertabot_Security')) {
 				Insertabot_Security::store_api_key('');
 			}
+			// Also clear the cached customer_id.
+			delete_option(self::OPTION_CUST_ID);
 			// Force disable when API key is cleared.
 			update_option(self::OPTION_EN, false);
 			return '';
@@ -160,6 +163,17 @@ final class Insertabot_Admin_Settings {
 			}
 		}
 
+		// Resolve and cache the customer_id from the Worker so future
+		// ephemeral tokens can use the O(1) v2 format.  A failure here is
+		// non-fatal — the plugin will fall back to the v1 O(N) format.
+		$api_base = get_option(self::OPTION_BASE, '');
+		if (!empty($api_base)) {
+			$customer_id = self::resolve_customer_id($value, $api_base);
+			if ($customer_id) {
+				update_option(self::OPTION_CUST_ID, $customer_id);
+			}
+		}
+
 		// Return empty to avoid saving plaintext in options
 		return '';
 	}
@@ -179,6 +193,48 @@ final class Insertabot_Admin_Settings {
 		}
 
 		return $enabled;
+	}
+
+	/**
+	 * Call the Worker's /api/auth/key-info endpoint to resolve the customer_id
+	 * for the given api_key.  Returns the validated customer_id string or null
+	 * on any error (network failure, invalid key, unexpected format).
+	 *
+	 * This is called once at key-save time so that subsequent ephemeral tokens
+	 * can use the O(1) v2 format (customer_id:timestamp:nonce:hmac_hex).
+	 *
+	 * @param string $api_key  The raw API key entered by the admin.
+	 * @param string $api_base The Worker base URL stored in settings.
+	 * @return string|null     Validated customer_id or null.
+	 */
+	private static function resolve_customer_id(string $api_key, string $api_base): ?string {
+		$url = trailingslashit(esc_url_raw($api_base)) . 'api/auth/key-info';
+
+		$response = wp_remote_post($url, array(
+			'body'    => wp_json_encode(array('api_key' => $api_key)),
+			'headers' => array('Content-Type' => 'application/json'),
+			'timeout' => 5,
+		));
+
+		if (is_wp_error($response)) {
+			return null;
+		}
+
+		if ((int) wp_remote_retrieve_response_code($response) !== 200) {
+			return null;
+		}
+
+		$body        = json_decode(wp_remote_retrieve_body($response), true);
+		$customer_id = isset($body['customer_id']) && is_string($body['customer_id'])
+			? $body['customer_id']
+			: '';
+
+		// Validate the format matches the known customer_id pattern.
+		if (!preg_match('/^cust_[a-zA-Z0-9]{16}$/', $customer_id)) {
+			return null;
+		}
+
+		return $customer_id;
 	}
 
 	private static function get_api_key(): string {

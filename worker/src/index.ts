@@ -200,7 +200,13 @@ async function hmacSha256Hex(message: string, secret: string): Promise<string> {
  * Validate the ephemeral token issued by the WordPress REST endpoint, then
  * issue a short-lived widget session token stored in KV.
  *
- * Token format (after base64url-decode):  timestamp:nonce:hmac_hex
+ * Token formats (after base64url-decode):
+ *   v2 (preferred): customer_id:timestamp:nonce:hmac_hex  — O(1) single-row lookup
+ *   v1 (legacy):    timestamp:nonce:hmac_hex              — O(N) full-table scan
+ *
+ * v2 is issued when WordPress has the customer_id cached (set on key save via
+ * POST /api/auth/key-info). v1 remains supported for installations that saved
+ * their API key before this change and haven't re-saved yet.
  */
 async function handleWidgetTokenExchange(
   request: Request,
@@ -236,18 +242,36 @@ async function handleWidgetTokenExchange(
     );
   }
 
-  // Expected: "timestamp:nonce:hmac_hex"
+  // Detect token version by part count.
+  // v2: customer_id:timestamp:nonce:hmac_hex  (4 parts)
+  // v1: timestamp:nonce:hmac_hex              (3 parts)
   const parts = decoded.split(':');
-  if (parts.length !== 3) {
+  const isV2 = parts.length === 4;
+  const isV1 = parts.length === 3;
+
+  if (!isV2 && !isV1) {
     return new Response(
       JSON.stringify({ error: 'Malformed token structure' }),
       { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...SECURITY_HEADERS } }
     );
   }
 
-  const [tsStr, nonce, providedHmac] = parts;
-  const timestamp = parseInt(tsStr, 10);
+  let embeddedCustomerId: string | null = null;
+  let tsStr: string, nonce: string, providedHmac: string;
 
+  if (isV2) {
+    [embeddedCustomerId, tsStr, nonce, providedHmac] = parts;
+    if (!/^cust_[a-zA-Z0-9]{16}$/.test(embeddedCustomerId)) {
+      return new Response(
+        JSON.stringify({ error: 'Malformed token fields' }),
+        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...SECURITY_HEADERS } }
+      );
+    }
+  } else {
+    [tsStr, nonce, providedHmac] = parts;
+  }
+
+  const timestamp = parseInt(tsStr, 10);
   if (
     isNaN(timestamp) ||
     !/^[0-9a-f]{16}$/.test(nonce) ||
@@ -284,22 +308,45 @@ async function handleWidgetTokenExchange(
     );
   }
 
-  // 4. HMAC verification — find the matching active customer
-  const payload = `${tsStr}:${nonce}`;
+  // 4. HMAC verification
+  //
+  // v2: O(1) — look up the single customer named in the token, then verify
+  //     the HMAC.  The customer_id is covered by the signature so it cannot
+  //     be forged without knowing the api_key.
+  //
+  // v1: O(N) legacy fallback — scan all active customers.  Remains correct
+  //     but slower; installations should re-save their API key to upgrade.
   let matchedCustomerId: string | null = null;
 
   try {
-    const rows = await env.DB.prepare(
-      `SELECT customer_id, api_key FROM customers WHERE status = 'active'`
-    ).all();
+    if (isV2 && embeddedCustomerId) {
+      // v2 path: single-row lookup
+      const payload = `${embeddedCustomerId}:${tsStr}:${nonce}`;
+      const row = await env.DB.prepare(
+        `SELECT customer_id, api_key FROM customers WHERE customer_id = ? AND status = 'active'`
+      ).bind(embeddedCustomerId).first() as { customer_id: string; api_key: string } | null;
 
-    if (rows?.results) {
-      for (const row of rows.results as Array<{ customer_id: string; api_key: string }>) {
-        if (!row.api_key || !/^ib_sk_[a-zA-Z0-9_]+$/.test(row.api_key)) continue;
+      if (row && row.api_key && /^ib_sk_[a-zA-Z0-9_]+$/.test(row.api_key)) {
         const expected = await hmacSha256Hex(payload, row.api_key);
         if (safeEqual(expected, providedHmac)) {
           matchedCustomerId = row.customer_id;
-          break;
+        }
+      }
+    } else {
+      // v1 path: full-table scan (legacy)
+      const payload = `${tsStr}:${nonce}`;
+      const rows = await env.DB.prepare(
+        `SELECT customer_id, api_key FROM customers WHERE status = 'active'`
+      ).all();
+
+      if (rows?.results) {
+        for (const row of rows.results as Array<{ customer_id: string; api_key: string }>) {
+          if (!row.api_key || !/^ib_sk_[a-zA-Z0-9_]+$/.test(row.api_key)) continue;
+          const expected = await hmacSha256Hex(payload, row.api_key);
+          if (safeEqual(expected, providedHmac)) {
+            matchedCustomerId = row.customer_id;
+            break;
+          }
         }
       }
     }
@@ -1003,7 +1050,7 @@ export default {
       '/', '/signup', '/login', '/playground', '/health', '/dashboard',
       '/favicon.ico', '/logo.png', '/widget.js',
       '/v1/stripe/webhook', '/checkout-success', '/v1/widget-token/exchange',
-      '/api/customer/create', '/api/customer/login',
+      '/api/customer/create', '/api/customer/login', '/api/auth/key-info',
       '/api/auth/set-password', '/api/auth/password-reset-request', '/api/auth/password-reset',
       '/api/auth/email/send-verification', '/api/auth/email/verify', '/api/auth/email/resend',
       '/api/auth/email/status', '/verify-email',
@@ -1259,6 +1306,54 @@ export default {
               headers: { "Content-Type": "application/json", ...corsHeaders, ...SECURITY_HEADERS },
             }
           );
+        }
+
+        // Resolve customer_id from an api_key — called server-side by the
+        // WordPress plugin when the admin saves their API key.  Returns only
+        // the customer_id so WP can embed it in future ephemeral tokens,
+        // enabling O(1) lookup in /v1/widget-token/exchange.
+        if (url.pathname === "/api/auth/key-info" && request.method === "POST") {
+          let keyInfoBody: { api_key?: string };
+          try {
+            keyInfoBody = await request.json() as { api_key?: string };
+          } catch {
+            return new Response(
+              JSON.stringify({ error: 'Invalid JSON body' }),
+              { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...SECURITY_HEADERS } }
+            );
+          }
+
+          const candidateKey = keyInfoBody?.api_key;
+          if (!candidateKey || typeof candidateKey !== 'string' || !/^ib_sk_[a-zA-Z0-9_-]+$/.test(candidateKey)) {
+            return new Response(
+              JSON.stringify({ error: 'Missing or invalid api_key' }),
+              { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...SECURITY_HEADERS } }
+            );
+          }
+
+          try {
+            const customerRow = await env.DB.prepare(
+              `SELECT customer_id FROM customers WHERE api_key = ? AND status = 'active'`
+            ).bind(candidateKey).first() as { customer_id: string } | null;
+
+            if (!customerRow) {
+              return new Response(
+                JSON.stringify({ error: 'Invalid or inactive API key' }),
+                { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...SECURITY_HEADERS } }
+              );
+            }
+
+            return new Response(
+              JSON.stringify({ customer_id: customerRow.customer_id }),
+              { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...SECURITY_HEADERS } }
+            );
+          } catch (err) {
+            console.error('DB error in key-info:', err);
+            return new Response(
+              JSON.stringify({ error: 'Internal error' }),
+              { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...SECURITY_HEADERS } }
+            );
+          }
         }
 
         // Set password (first-time setup)

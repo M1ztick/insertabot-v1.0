@@ -77,27 +77,35 @@ function insertabot_widget_token_endpoint( WP_REST_Request $request ) {
     }
 
     // ------------------------------------------------------------------ //
-    // 3. Derive the customer_id from the api_key prefix.                 //
-    //    The ib_sk_ prefix is stripped; the remainder identifies the     //
-    //    tenant. The Worker already knows to look up by api_key, so we   //
-    //    embed just enough to let it route the exchange without needing  //
-    //    to store a separate customer_id in WordPress options.           //
+    // 3. Build the signed ephemeral token.                              //
+    //                                                                   //
+    // v2 (preferred): customer_id:timestamp:nonce:hmac_hex             //
+    //   Requires insertabot_customer_id to be cached in WP options.    //
+    //   Enables O(1) single-row lookup in the Worker exchange endpoint. //
+    //                                                                   //
+    // v1 (legacy): timestamp:nonce:hmac_hex                            //
+    //   Used when the customer_id option is not yet cached.            //
+    //   Worker falls back to an O(N) full-table scan.                  //
     // ------------------------------------------------------------------ //
     /** @var int TOKEN_TTL Seconds until the ephemeral token expires. */
-    $ttl       = (int) apply_filters( 'insertabot_widget_token_ttl', 300 ); // 5 minutes
-    $timestamp = time();
-    $nonce     = bin2hex( random_bytes( 8 ) ); // 16 hex chars, prevents replay
+    $ttl         = (int) apply_filters( 'insertabot_widget_token_ttl', 300 ); // 5 minutes
+    $timestamp   = time();
+    $nonce       = bin2hex( random_bytes( 8 ) ); // 16 hex chars, prevents replay
+    $customer_id = (string) get_option( 'insertabot_customer_id', '' );
 
-    // Payload: timestamp + nonce only (no customer_id — the Worker derives
-    // the tenant from the HMAC key itself).
-    $payload   = $timestamp . ':' . $nonce;
+    if ( ! empty( $customer_id ) && preg_match( '/^cust_[a-zA-Z0-9]{16}$/', $customer_id ) ) {
+        // v2: include customer_id in payload — enables O(1) Worker lookup.
+        $payload   = $customer_id . ':' . $timestamp . ':' . $nonce;
+        $signature = hash_hmac( 'sha256', $payload, $api_key );
+        $raw_token = $customer_id . ':' . $timestamp . ':' . $nonce . ':' . $signature;
+    } else {
+        // v1 legacy: omit customer_id — Worker falls back to O(N) scan.
+        $payload   = $timestamp . ':' . $nonce;
+        $signature = hash_hmac( 'sha256', $payload, $api_key );
+        $raw_token = $timestamp . ':' . $nonce . ':' . $signature;
+    }
 
-    // HMAC-SHA256 of the payload, keyed with the raw API key.
-    $signature = hash_hmac( 'sha256', $payload, $api_key );
-
-    // Combine into a single base64url-encoded token string.
-    $raw_token = $payload . ':' . $signature;
-    $token     = insertabot_base64url_encode( $raw_token );
+    $token = insertabot_base64url_encode( $raw_token );
 
     // Log the token issuance (key is never logged).
     Insertabot_Security::log_event( 'widget_token_issued', array(
