@@ -1367,6 +1367,48 @@ export default {
         if (session) {
           const sessionCustomerId = session.customer_id;
 
+          // ✅ Stripe checkout session creation (authenticated)
+          if (url.pathname === "/api/checkout/create" && request.method === "POST") {
+            const customerData = await env.DB.prepare(
+              'SELECT email, plan_type FROM customers WHERE customer_id = ?'
+            ).bind(sessionCustomerId).first<{ email: string; plan_type: string }>();
+
+            if (!customerData) {
+              return new Response(JSON.stringify({ error: "Customer not found" }), {
+                status: 404,
+                headers: { "Content-Type": "application/json", ...corsHeaders, ...SECURITY_HEADERS },
+              });
+            }
+
+            if (customerData.plan_type === 'pro' || customerData.plan_type === 'owner') {
+              return new Response(JSON.stringify({ error: "Already on Pro plan" }), {
+                status: 400,
+                headers: { "Content-Type": "application/json", ...corsHeaders, ...SECURITY_HEADERS },
+              });
+            }
+
+            const baseUrl = `${url.protocol}//${url.host}/checkout-success`;
+            const session = await createCheckoutSession(
+              env.STRIPE_SECRET_KEY,
+              sessionCustomerId,
+              customerData.email,
+              env.STRIPE_PRO_PRICE_ID,
+              baseUrl
+            );
+
+            if (!session) {
+              return new Response(JSON.stringify({ error: "Failed to create checkout session" }), {
+                status: 500,
+                headers: { "Content-Type": "application/json", ...corsHeaders, ...SECURITY_HEADERS },
+              });
+            }
+
+            return new Response(JSON.stringify({ url: session.url, sessionId: session.sessionId }), {
+              status: 200,
+              headers: { "Content-Type": "application/json", ...corsHeaders, ...SECURITY_HEADERS },
+            });
+          }
+
           if (url.pathname === "/api/auth/logout" && request.method === "POST") {
             const result = await handleLogout(env.DB, sessionId, clientIP);
             return new Response(
