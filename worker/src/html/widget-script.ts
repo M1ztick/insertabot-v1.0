@@ -6,28 +6,32 @@ export function getWidgetScript(apiOrigin: string): string {
     // API KEY VALIDATION - Prevents silent failures
     // ============================================================================
     const scriptElement = document.currentScript;
-    const apiKey = scriptElement?.getAttribute("data-api-key");
-    
-    // Validate API key exists and is not a placeholder
-    if (!apiKey || apiKey === "" || apiKey === "ib_sk_demo_REPLACE") {
+
+    // Prefer the short-lived session token (issued via widget-bridge.js token
+    // exchange). Fall back to a legacy api key so that direct / playground
+    // integrations keep working during the migration period.
+    const sessionToken  = scriptElement?.getAttribute("data-session-token");
+    const legacyApiKey  = scriptElement?.getAttribute("data-api-key");
+    const authToken     = sessionToken || legacyApiKey || null;
+    const authMode      = sessionToken ? 'session' : (legacyApiKey ? 'legacy' : null);
+
+    // Validate that some form of credential is present.
+    if (!authToken) {
         console.error("═══════════════════════════════════════════════════════");
-        console.error("🚫 [Insertabot] MISSING OR INVALID API KEY");
+        console.error("🚫 [Insertabot] MISSING SESSION TOKEN");
         console.error("═══════════════════════════════════════════════════════");
         console.error("");
-        console.error("The Insertabot widget requires a valid API key to function.");
+        console.error("The Insertabot widget is loaded by widget-bridge.js which");
+        console.error("passes a short-lived session token via data-session-token.");
+        console.error("If you are integrating directly (without WordPress) use:");
         console.error("");
-        console.error("❌ Current value:", apiKey || "(empty)");
-        console.error("");
-        console.error("📝 Correct usage:");
+        console.error("📝 Direct usage:");
         console.error('   <script src="' + scriptElement?.src + '"');
-        console.error('           data-api-key="YOUR_API_KEY_HERE"></script>');
+        console.error('           data-session-token="wt_..."></script>');
         console.error("");
         console.error("🔑 Get your API key:");
         console.error("   → Sign up at: https://insertabot.io/signup");
         console.error("   → Or visit dashboard: https://insertabot.io/dashboard");
-        console.error("");
-        console.error("💡 Need help? Check the docs:");
-        console.error("   https://github.com/M1ztick/insertabot_by_mistyk_media/blob/main/SETUP_GUIDE.md");
         console.error("");
         console.error("═══════════════════════════════════════════════════════");
         
@@ -47,7 +51,8 @@ export function getWidgetScript(apiOrigin: string): string {
     const InsertabotCore = {
         scriptRef: scriptElement,
         credentials: {
-            key: apiKey, // Now guaranteed to be valid
+            token: authToken,   // session token or legacy api key
+            mode:  authMode,    // 'session' | 'legacy'
             endpoint: scriptElement?.getAttribute("data-api-base") || "${apiOrigin}"
         },
         quotas: {
@@ -123,8 +128,11 @@ export function getWidgetScript(apiOrigin: string): string {
     const ConfigLoader = {
         async fetch() {
             try {
+                const authHeader = InsertabotCore.credentials.mode === 'session'
+                    ? { "X-Widget-Token": InsertabotCore.credentials.token }
+                    : { "X-API-Key": InsertabotCore.credentials.token };
                 const response = await fetch(InsertabotCore.credentials.endpoint + '/v1/widget/config', {
-                    headers: { "X-API-Key": InsertabotCore.credentials.key }
+                    headers: authHeader
                 });
 
                 if (!response.ok) {
@@ -221,7 +229,9 @@ export function getWidgetScript(apiOrigin: string): string {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "X-API-Key": InsertabotCore.credentials.key
+                        ...(InsertabotCore.credentials.mode === 'session'
+                            ? { "X-Widget-Token": InsertabotCore.credentials.token }
+                            : { "X-API-Key": InsertabotCore.credentials.token })
                     },
                     body: JSON.stringify(payload),
                     signal: InsertabotCore.state.requestAbortSignal.signal

@@ -159,7 +159,8 @@
         </div>
 
         <div class="code-snippet">
-            <span>&lt;script</span> src="https://your-domain.com/widget.js"<span>&gt;&lt;/script&gt;</span>
+            <span>&lt;script</span> src="https://your-domain.com/widget.js"<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;data-session-token="wt_..."<span>&gt;&lt;/script&gt;</span>
         </div>
 
         <div class="cta-wrapper">
@@ -168,8 +169,10 @@
     </div>
 
     <!-- Insertabot Widget Script -->
-    <!-- The widget requires a valid API key to function. Replace 'YOUR_API_KEY' with your actual Insertabot API key. -->
-    <script src="insertabot.js" data-api-key="YOUR_API_KEY"></script>
+    <!-- Session token is injected by widget-bridge.js at runtime; the raw API
+         key is never present in HTML. Replace the token below only for direct
+         local testing — in production always use widget-bridge.js. -->
+    <script src="insertabot.js" data-session-token="wt_REPLACE_FOR_LOCAL_TEST_ONLY"></script>
 </body>
 
 </html>

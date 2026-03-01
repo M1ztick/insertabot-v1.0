@@ -3,120 +3,163 @@
 
   var script = document.currentScript;
   var tokenEndpoint = script && script.getAttribute('data-token-endpoint');
-  var apiBase = script && script.getAttribute('data-api-base');
+  var apiBase       = script && script.getAttribute('data-api-base');
+  var wpNonce       = script && script.getAttribute('data-nonce');
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
 
   /**
-   * Validate API key format to prevent XSS
+   * Validate the base URL received from the WordPress option.
+   * Returns the normalised origin (https://...) or null on failure.
    */
-  function validateApiKey(key) {
-    if (!key || typeof key !== 'string') {
-      return null;
-    }
-    // Insertabot keys start with ib_sk_ followed by hex characters
-    if (!/^ib_sk_[a-zA-Z0-9_-]+$/.test(key)) {
-      console.error('[Insertabot] Invalid API key format');
-      return null;
-    }
-    return key;
-  }
-
-  /**
-   * Load remote widget script with the API key passed as data-api-key
-   */
-  function loadRemote(apiKey) {
+  function validateApiBase(raw) {
+    if (!raw || typeof raw !== 'string') return null;
     try {
-      var s = document.createElement('script');
-      s.async = true;
-
-      // Validate and construct the widget script URL
-      var baseUrl = '';
-      if (apiBase && typeof apiBase === 'string') {
-        try {
-          var url = new URL(apiBase);
-          if (url.protocol === 'https:' || url.protocol === 'http:') {
-            baseUrl = url.origin;
-          }
-        } catch (e) {
-          console.error('[Insertabot] Invalid API base URL');
-          return;
-        }
-      }
-
-      if (!baseUrl) {
-        console.error('[Insertabot] No valid API base URL');
-        return;
-      }
-
-      s.src = baseUrl + '/widget.js';
-
-      // Pass the API key as data-api-key so widget.js can authenticate
-      if (apiKey) {
-        var validKey = validateApiKey(apiKey);
-        if (validKey) {
-          s.setAttribute('data-api-key', validKey);
-        } else {
-          console.error('[Insertabot] API key validation failed, widget will not load');
-          return;
-        }
-      } else {
-        console.error('[Insertabot] No API key available, widget will not load');
-        return;
-      }
-
-      s.onerror = function () {
-        console.error('[Insertabot] Failed to load widget script from: ' + s.src);
-      };
-
-      document.head.appendChild(s);
-    } catch (error) {
-      console.error('[Insertabot] Error loading remote widget:', error);
+      var url = new URL(raw);
+      if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+      return url.origin; // strip any path/query that may have crept in
+    } catch (e) {
+      return null;
     }
   }
+
+  /**
+   * Basic sanity-check for the worker session token format.
+   * The worker issues tokens as:  wt_<48 hex chars>
+   */
+  function validateSessionToken(tok) {
+    return typeof tok === 'string' && /^wt_[0-9a-f]{48}$/.test(tok);
+  }
+
+  /**
+   * Abort-controller-aware fetch with a hard timeout.
+   *
+   * @param {string}   url
+   * @param {object}   options  - standard fetch options
+   * @param {number}   ms       - timeout in milliseconds
+   * @returns {Promise<Response>}
+   */
+  function fetchWithTimeout(url, options, ms) {
+    var controller = null;
+    var tid        = null;
+    var opts       = options || {};
+
+    if (typeof AbortController !== 'undefined') {
+      try {
+        controller  = new AbortController();
+        opts.signal = controller.signal;
+        tid = setTimeout(function () {
+          controller.abort();
+        }, ms);
+      } catch (e) {
+        // AbortController unavailable — continue without timeout signal
+      }
+    }
+
+    return fetch(url, opts).then(function (res) {
+      if (tid) clearTimeout(tid);
+      return res;
+    }, function (err) {
+      if (tid) clearTimeout(tid);
+      throw err;
+    });
+  }
+
+  /**
+   * Dynamically inject the remote widget script, passing the session token
+   * via data-session-token (NOT data-api-key — the raw key is never exposed).
+   */
+  function loadWidget(sessionToken, baseUrl) {
+    if (!validateSessionToken(sessionToken)) {
+      console.error('[Insertabot] Session token validation failed; widget will not load.');
+      return;
+    }
+
+    var s = document.createElement('script');
+    s.async = true;
+    s.src   = baseUrl + '/widget.js';
+    s.setAttribute('data-session-token', sessionToken);
+    s.setAttribute('data-api-base', baseUrl);
+
+    s.onerror = function () {
+      console.error('[Insertabot] Failed to load widget script from: ' + s.src);
+    };
+
+    document.head.appendChild(s);
+  }
+
+  // ── Guard: required attributes must be present ────────────────────────────
 
   if (!tokenEndpoint) {
-    console.error('[Insertabot] No token endpoint configured');
+    console.error('[Insertabot] Missing data-token-endpoint attribute.');
     return;
   }
 
-  // Fetch the API key from the WordPress REST endpoint
-  var fetchOptions = { credentials: 'same-origin' };
-  var controller = null;
-  var timeoutId = null;
-
-  if (typeof AbortController !== 'undefined') {
-    try {
-      controller = new AbortController();
-      fetchOptions.signal = controller.signal;
-      timeoutId = setTimeout(function () {
-        controller.abort();
-        console.error('[Insertabot] Token request timed out');
-      }, 5000);
-    } catch (e) {
-      // AbortController not supported, continue without timeout
-    }
+  var baseUrl = validateApiBase(apiBase);
+  if (!baseUrl) {
+    console.error('[Insertabot] Missing or invalid data-api-base attribute.');
+    return;
   }
 
-  fetch(tokenEndpoint, fetchOptions)
+  // ── Step 1: fetch the ephemeral HMAC token from WordPress ─────────────────
+  //
+  // WordPress signs the token server-side using the customer's api_key as the
+  // HMAC secret. The raw api_key is never sent to the browser.
+
+  var wpFetchOptions = {
+    credentials: 'same-origin',
+    headers: wpNonce ? { 'X-WP-Nonce': wpNonce } : {}
+  };
+
+  fetchWithTimeout(tokenEndpoint, wpFetchOptions, 5000)
     .then(function (res) {
-      if (timeoutId) clearTimeout(timeoutId);
       if (!res.ok) {
-        throw new Error('Token request failed with status: ' + res.status);
+        throw new Error('WP token request failed: ' + res.status);
       }
       return res.json();
     })
     .then(function (json) {
-      if (json && json.api_key) {
-        loadRemote(json.api_key);
-      } else {
-        console.error('[Insertabot] No API key in response');
+      if (!json || typeof json.token !== 'string' || !json.token) {
+        throw new Error('No token in WP response');
       }
+
+      var ephemeralToken = json.token;
+
+      // ── Step 2: exchange the ephemeral token with the Cloudflare Worker ──
+      //
+      // The Worker verifies the HMAC, consumes the nonce (replay protection),
+      // and returns a short-lived session_token stored in KV.
+      // This exchange happens entirely server-side (Worker); the raw api_key
+      // is never visible to the browser at any point.
+
+      return fetchWithTimeout(
+        baseUrl + '/v1/widget-token/exchange',
+        {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ token: ephemeralToken })
+        },
+        8000
+      );
     })
-    .catch(function (error) {
-      if (timeoutId) clearTimeout(timeoutId);
-      if (error && error.name === 'AbortError') {
-        console.error('[Insertabot] Token request timed out');
-      } else {
-        console.error('[Insertabot] Token request failed:', error && error.message ? error.message : 'Unknown error');
+    .then(function (res) {
+      if (!res.ok) {
+        throw new Error('Worker token exchange failed: ' + res.status);
       }
+      return res.json();
+    })
+    .then(function (json) {
+      if (!json || !json.session_token) {
+        throw new Error('No session_token in exchange response');
+      }
+
+      // ── Step 3: load the widget with the session token ───────────────────
+      loadWidget(json.session_token, baseUrl);
+    })
+    .catch(function (err) {
+      var msg = (err && err.name === 'AbortError')
+        ? 'Request timed out'
+        : (err && err.message ? err.message : 'Unknown error');
+      console.error('[Insertabot] Token exchange failed:', msg);
     });
 })();

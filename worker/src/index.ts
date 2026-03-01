@@ -148,6 +148,222 @@ function esc(str: string): string {
     .replace(/'/g, "&#39;");
 }
 
+// =============================================================================
+// Widget Session Token helpers
+// =============================================================================
+
+/**
+ * WIDGET_TOKEN_TTL — how long (seconds) a widget session token is valid.
+ */
+const WIDGET_TOKEN_TTL = 300; // 5 minutes
+
+/**
+ * Decode a base64url string (RFC 4648 §5) to a UTF-8 string.
+ */
+function base64urlDecode(input: string): string {
+  const base64 = input.replace(/-/g, '+').replace(/_/g, '/')
+    + '=='.slice(0, (4 - (input.length % 4)) % 4);
+  return atob(base64);
+}
+
+/**
+ * Constant-time string comparison to guard against timing attacks.
+ */
+function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
+/**
+ * HMAC-SHA256 using the Workers SubtleCrypto API, returns lowercase hex.
+ */
+async function hmacSha256Hex(message: string, secret: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
+  return Array.from(new Uint8Array(sig))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+/**
+ * Validate the ephemeral token issued by the WordPress REST endpoint, then
+ * issue a short-lived widget session token stored in KV.
+ *
+ * Token format (after base64url-decode):  timestamp:nonce:hmac_hex
+ */
+async function handleWidgetTokenExchange(
+  request: Request,
+  env: Env,
+  corsHeaders: HeadersInit
+): Promise<Response> {
+  let body: { token?: string };
+  try {
+    body = await request.json() as { token?: string };
+  } catch {
+    return new Response(
+      JSON.stringify({ error: 'Invalid JSON body' }),
+      { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...SECURITY_HEADERS } }
+    );
+  }
+
+  const rawToken = body?.token;
+  if (!rawToken || typeof rawToken !== 'string' || rawToken.length > 512) {
+    return new Response(
+      JSON.stringify({ error: 'Missing or invalid token' }),
+      { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...SECURITY_HEADERS } }
+    );
+  }
+
+  // 1. Decode
+  let decoded: string;
+  try {
+    decoded = base64urlDecode(rawToken);
+  } catch {
+    return new Response(
+      JSON.stringify({ error: 'Malformed token' }),
+      { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...SECURITY_HEADERS } }
+    );
+  }
+
+  // Expected: "timestamp:nonce:hmac_hex"
+  const parts = decoded.split(':');
+  if (parts.length !== 3) {
+    return new Response(
+      JSON.stringify({ error: 'Malformed token structure' }),
+      { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...SECURITY_HEADERS } }
+    );
+  }
+
+  const [tsStr, nonce, providedHmac] = parts;
+  const timestamp = parseInt(tsStr, 10);
+
+  if (
+    isNaN(timestamp) ||
+    !/^[0-9a-f]{16}$/.test(nonce) ||
+    !/^[0-9a-f]{64}$/.test(providedHmac)
+  ) {
+    return new Response(
+      JSON.stringify({ error: 'Malformed token fields' }),
+      { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...SECURITY_HEADERS } }
+    );
+  }
+
+  // 2. Expiry check
+  const nowSec = Math.floor(Date.now() / 1000);
+  if (nowSec - timestamp > WIDGET_TOKEN_TTL) {
+    return new Response(
+      JSON.stringify({ error: 'Token expired' }),
+      { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...SECURITY_HEADERS } }
+    );
+  }
+  if (timestamp - nowSec > 30) {
+    return new Response(
+      JSON.stringify({ error: 'Token timestamp invalid' }),
+      { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...SECURITY_HEADERS } }
+    );
+  }
+
+  // 3. Replay check
+  const replayKey = `wt_nonce:${nonce}`;
+  const alreadyUsed = await env.RATE_LIMITER.get(replayKey);
+  if (alreadyUsed) {
+    return new Response(
+      JSON.stringify({ error: 'Token already used' }),
+      { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...SECURITY_HEADERS } }
+    );
+  }
+
+  // 4. HMAC verification — find the matching active customer
+  const payload = `${tsStr}:${nonce}`;
+  let matchedCustomerId: string | null = null;
+
+  try {
+    const rows = await env.DB.prepare(
+      `SELECT customer_id, api_key FROM customers WHERE status = 'active'`
+    ).all();
+
+    if (rows?.results) {
+      for (const row of rows.results as Array<{ customer_id: string; api_key: string }>) {
+        if (!row.api_key || !/^ib_sk_[a-zA-Z0-9_]+$/.test(row.api_key)) continue;
+        const expected = await hmacSha256Hex(payload, row.api_key);
+        if (safeEqual(expected, providedHmac)) {
+          matchedCustomerId = row.customer_id;
+          break;
+        }
+      }
+    }
+  } catch (err) {
+    console.error('DB error during token exchange:', err);
+    return new Response(
+      JSON.stringify({ error: 'Internal error during token validation' }),
+      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...SECURITY_HEADERS } }
+    );
+  }
+
+  if (!matchedCustomerId) {
+    return new Response(
+      JSON.stringify({ error: 'Invalid token signature' }),
+      { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...SECURITY_HEADERS } }
+    );
+  }
+
+  // 5. Mark nonce as consumed (replay protection)
+  await env.RATE_LIMITER.put(replayKey, '1', { expirationTtl: WIDGET_TOKEN_TTL + 30 });
+
+  // 6. Issue a widget session token
+  const randomBytes = new Uint8Array(24);
+  crypto.getRandomValues(randomBytes);
+  const sessionToken = 'wt_' + Array.from(randomBytes)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+
+  await env.RATE_LIMITER.put(
+    `wt_session:${sessionToken}`,
+    matchedCustomerId,
+    { expirationTtl: WIDGET_TOKEN_TTL }
+  );
+
+  return new Response(
+    JSON.stringify({
+      session_token: sessionToken,
+      expires_at: nowSec + WIDGET_TOKEN_TTL,
+    }),
+    {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders, ...SECURITY_HEADERS },
+    }
+  );
+}
+
+/**
+ * Resolve a widget session token (X-Widget-Token header) to a customer_id.
+ * Returns null if the token is absent, malformed, or expired.
+ */
+async function resolveWidgetSessionToken(
+  request: Request,
+  kv: KVNamespace
+): Promise<string | null> {
+  const token = request.headers.get('X-Widget-Token');
+  if (!token || !/^wt_[0-9a-f]{48}$/.test(token)) return null;
+  const customerId = await kv.get(`wt_session:${token}`);
+  return customerId || null;
+}
+
+// =============================================================================
+// Security headers for all responses
+// =============================================================================
+
 // Security headers for all responses
 const SECURITY_HEADERS: HeadersInit = {
   "X-Content-Type-Options": "nosniff",
@@ -184,7 +400,7 @@ function createCorsHeaders(origin: string, allowed: boolean): HeadersInit {
   return {
     "Access-Control-Allow-Origin": allowed ? origin : "*",
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-API-Key",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-API-Key, X-Widget-Token",
     "Access-Control-Max-Age": "86400",
     "Vary": "Origin",
   };
@@ -786,7 +1002,7 @@ export default {
     const publicRoutes = [
       '/', '/signup', '/login', '/playground', '/health', '/dashboard',
       '/favicon.ico', '/logo.png', '/widget.js',
-      '/v1/stripe/webhook', '/checkout-success',
+      '/v1/stripe/webhook', '/checkout-success', '/v1/widget-token/exchange',
       '/api/customer/create', '/api/customer/login',
       '/api/auth/set-password', '/api/auth/password-reset-request', '/api/auth/password-reset',
       '/api/auth/email/send-verification', '/api/auth/email/verify', '/api/auth/email/resend',
@@ -1179,6 +1395,12 @@ export default {
         }
 
         // Stripe webhook handler
+        // Widget token exchange — converts the ephemeral WP HMAC token into a
+        // short-lived worker session token. The raw api_key is never exposed.
+        if (url.pathname === "/v1/widget-token/exchange" && request.method === "POST") {
+          return handleWidgetTokenExchange(request, env, corsHeaders);
+        }
+
         if (url.pathname === "/v1/stripe/webhook" && request.method === "POST") {
           const signature = request.headers.get("stripe-signature");
           if (!signature) {
@@ -1281,12 +1503,35 @@ export default {
     }
 
     try {
-      const apiKey = getApiKey(request);
-      if (!apiKey) {
-        throw new AuthenticationError(ErrorCode.MISSING_API_KEY, 'Missing API key');
-      }
+      // ── Resolve identity: widget session token OR legacy api_key ─────────
+      const widgetCustomerId = await resolveWidgetSessionToken(request, env.RATE_LIMITER);
 
-      const customerConfig = await getCustomerConfig(env.DB, apiKey);
+      let customerConfig: CustomerConfig;
+      let apiKey: string | null;
+
+      if (widgetCustomerId) {
+        // Request authenticated via a short-lived widget session token
+        apiKey = null;
+        const row = await env.DB
+          .prepare(
+            `SELECT customer_id, api_key, plan_type, status,
+                    rate_limit_per_hour, rate_limit_per_day, rag_enabled
+             FROM customers WHERE customer_id = ? AND status = 'active'`
+          )
+          .bind(widgetCustomerId)
+          .first() as CustomerConfig | null;
+        if (!row) {
+          throw new AuthenticationError(ErrorCode.INVALID_API_KEY, 'Invalid or expired widget session');
+        }
+        customerConfig = row;
+      } else {
+        // Legacy api_key path (dashboard, direct integrations, playground, etc.)
+        apiKey = getApiKey(request);
+        if (!apiKey) {
+          throw new AuthenticationError(ErrorCode.MISSING_API_KEY, 'Missing API key or widget session token');
+        }
+        customerConfig = await getCustomerConfig(env.DB, apiKey);
+      }
       const widgetConfig = await getWidgetConfig(env.DB, customerConfig.customer_id);
 
       // Allow requests from the Worker's own origin (e.g. dashboard playground)
@@ -1298,7 +1543,7 @@ export default {
       if (!originAllowed && origin) {
         await logger.warn("Blocked origin attempt", {
           origin,
-          apiKey: apiKey.substring(0, 12) + '...',
+          apiKey: apiKey ? apiKey.substring(0, 12) + '...' : '(widget-session)',
           customerId: customerConfig.customer_id,
           path: url.pathname,
         });
