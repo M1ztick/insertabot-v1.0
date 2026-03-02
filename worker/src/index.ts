@@ -422,17 +422,34 @@ const SECURITY_HEADERS: HeadersInit = {
 // Validate origin against customer's allowed domains
 function isOriginAllowed(origin: string, allowedDomains: string | null): boolean {
   if (!origin || typeof origin !== 'string') return false;
-  if (!allowedDomains || typeof allowedDomains !== 'string') return false;
+  // Blank/null means "allow all origins" (matches dashboard help text)
+  if (!allowedDomains || typeof allowedDomains !== 'string') return true;
+
+  // Extract just the hostname from the incoming origin for hostname-only comparisons.
+  // createCustomer() stores normalized hostnames (e.g. "yoursite.com"), while
+  // dashboard users enter full origins (e.g. "https://yoursite.com").
+  // We support both formats.
+  let originHostname: string | null = null;
+  try {
+    originHostname = new URL(origin).hostname;
+  } catch {
+    // origin is not a valid URL; hostname comparison will be skipped
+  }
 
   try {
     const domains = allowedDomains.split(',').map(d => d.trim()).filter(d => d.length > 0);
+    if (domains.length === 0) return true; // empty list = allow all
     return domains.some(domain => {
       if (domain === '*') return true;
       if (domain === origin) return true;
+      // Hostname-only match (e.g. stored as "yoursite.com", origin is "https://yoursite.com")
+      if (originHostname && domain === originHostname) return true;
       if (domain.startsWith('*.')) {
         const baseDomain = domain.slice(2);
         if (!baseDomain || baseDomain.length === 0) return false;
-        return origin === baseDomain || origin.endsWith('.' + baseDomain);
+        // Match full origin or hostname against wildcard base
+        if (origin === baseDomain || origin.endsWith('.' + baseDomain)) return true;
+        if (originHostname && (originHostname === baseDomain || originHostname.endsWith('.' + baseDomain))) return true;
       }
       return false;
     });
