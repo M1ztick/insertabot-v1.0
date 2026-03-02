@@ -173,5 +173,10 @@
         ? 'Request timed out'
         : (err && err.message ? err.message : 'Unknown error');
       console.error('[Insertabot] Token exchange failed:', msg);
+      console.error('[Insertabot] Debug info:', {
+        tokenEndpoint: tokenEndpoint,
+        apiBase: baseUrl,
+        error: err
+      });
     });
 })();

@@ -171,6 +171,21 @@ final class Insertabot_Admin_Settings {
 			$customer_id = self::resolve_customer_id($value, $api_base);
 			if ($customer_id) {
 				update_option(self::OPTION_CUST_ID, $customer_id);
+				add_settings_error(
+					'insertabot_settings_messages',
+					'insertabot_customer_id_cached',
+					esc_html__('API key validated and customer ID cached successfully.', 'insertabot-ai-chatbot-solution'),
+					'success'
+				);
+			} else {
+				// Clear any stale customer_id
+				delete_option(self::OPTION_CUST_ID);
+				add_settings_error(
+					'insertabot_settings_messages',
+					'insertabot_customer_id_warning',
+					esc_html__('API key saved but could not resolve customer ID. Widget will use legacy token format (slower). Check API Base URL.', 'insertabot-ai-chatbot-solution'),
+					'warning'
+				);
 			}
 		}
 
