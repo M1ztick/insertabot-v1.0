@@ -1524,6 +1524,13 @@ export default {
             });
           }
 
+          if (!env.STRIPE_WEBHOOK_SECRET) {
+            return new Response(JSON.stringify({ error: "Webhook secret not configured" }), {
+              status: 500,
+              headers: { "Content-Type": "application/json", ...corsHeaders, ...SECURITY_HEADERS },
+            });
+          }
+
           const body = await request.text();
           const isValid = await verifyWebhookSignature(body, signature, env.STRIPE_WEBHOOK_SECRET);
           if (!isValid) {
@@ -1730,7 +1737,7 @@ export default {
           if (url.pathname === "/api/checkout/create" && request.method === "POST") {
             const customerData = await env.DB.prepare(
               'SELECT email, plan_type FROM customers WHERE customer_id = ?'
-            ).bind(sessionCustomerId).first<{ email: string; plan_type: string }>();
+            ).bind(sessionCustomerId).first() as { email: string; plan_type: string } | null;
 
             if (!customerData) {
               return new Response(JSON.stringify({ error: "Customer not found" }), {
@@ -1742,6 +1749,13 @@ export default {
             if (customerData.plan_type === 'pro' || customerData.plan_type === 'owner') {
               return new Response(JSON.stringify({ error: "Already on Pro plan" }), {
                 status: 400,
+                headers: { "Content-Type": "application/json", ...corsHeaders, ...SECURITY_HEADERS },
+              });
+            }
+
+            if (!env.STRIPE_SECRET_KEY || !env.STRIPE_PRO_PRICE_ID) {
+              return new Response(JSON.stringify({ error: "Stripe not configured" }), {
+                status: 500,
                 headers: { "Content-Type": "application/json", ...corsHeaders, ...SECURITY_HEADERS },
               });
             }
