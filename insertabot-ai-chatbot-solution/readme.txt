@@ -3,7 +3,7 @@ Contributors: m1styk
 Tags: chatbot, ai, chat, support, customer service
 Requires at least: 5.9
 Tested up to: 6.9
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -60,8 +60,7 @@ Add a customizable AI chatbot to your WordPress site. Real-time web search, unli
 1. **Install Plugin** - Download and activate from WordPress.org
 2. **Get API Key** - Sign up free at insertabot.io
 3. **Paste & Enable** - Enter your API key and toggle on
-4. **Embed Site Tag** - Copy the embed code from your dashboard and paste it in your site footer
-5. **Done!** - Your AI chatbot is now live on your site
+4. **Done!** - Your AI chatbot is now live on your site
 
 ###  Why Users Love It
 
@@ -73,7 +72,7 @@ Add a customizable AI chatbot to your WordPress site. Real-time web search, unli
 
 ###  Technical Details
 
-* Async script loading (won't slow down your site)
+* Footer script loading (won't slow down your site)
 * GDPR compliant
 * Works with all WordPress themes
 * Compatible with page builders (Elementor, Divi, etc.)
@@ -147,8 +146,7 @@ No credit card required. 20 messages per day included.
 5. Go to **Insertabot** in your admin menu
 6. Get your free API key from [insertabot.io](https://insertabot.io/signup)
 7. Paste your API key and enable the chatbot
-8. Copy the **Embed Code** script tag from your [dashboard](https://insertabot.io/dashboard) and paste it before the closing `</body>` tag — the easiest way is with the free **Insert Headers and Footers** plugin
-9. Done!
+8. Done! The chat widget will appear automatically on your site.
 
 ### Manual Installation
 
@@ -207,6 +205,10 @@ Visit your [dashboard](https://insertabot.io/dashboard) or click the upgrade lin
 
 == Changelog ==
 
+= 1.0.3 =
+* Fix: Widget no longer requires manual script tag in footer — plugin now injects it automatically on all pages
+* Fix: Removed `async` attribute from bridge script that was preventing `document.currentScript` from resolving widget configuration
+
 = 1.0.2 =
 * Upgraded ephemeral token system: v2 tokens now include customer_id for faster widget authentication (v1 fallback retained for existing installs)
 * Security: upgraded rate-limit key hashing from MD5 to SHA-256
@@ -226,6 +228,9 @@ Visit your [dashboard](https://insertabot.io/dashboard) or click the upgrade lin
 * Customizable appearance
 
 == Upgrade Notice ==
+
+= 1.0.3 =
+Fixes automatic widget injection — the chatbot now appears without any manual script tag setup. Upgrade recommended for all users.
 
 = 1.0.0 =
 Initial release of Insertabot for WordPress. Get started free today!
