@@ -156,7 +156,6 @@ class Insertabot_Plugin {
             data-api-base="<?php echo esc_attr($api_base); ?>"
             data-token-endpoint="<?php echo esc_attr($token_endpoint); ?>"
             data-nonce="<?php echo esc_attr($nonce); ?>"
-            async
         ></script>
         <?php
     }
