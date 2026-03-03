@@ -1,10 +1,9 @@
 (function () {
   'use strict';
 
-  var script = document.currentScript;
-  var tokenEndpoint = script && script.getAttribute('data-token-endpoint');
-  var apiBase       = script && script.getAttribute('data-api-base');
-  var wpNonce       = script && script.getAttribute('data-nonce');
+  var config = window.insertabotConfig || {};
+  var tokenEndpoint = config.tokenEndpoint;
+  var apiBase = config.apiBase;
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -103,13 +102,13 @@
   // ── Guard: required attributes must be present ────────────────────────────
 
   if (!tokenEndpoint) {
-    console.error('[Insertabot] Missing data-token-endpoint attribute.');
+    console.error('[Insertabot] Missing tokenEndpoint in config.');
     return;
   }
 
   var baseUrl = validateApiBase(apiBase);
   if (!baseUrl) {
-    console.error('[Insertabot] Missing or invalid data-api-base attribute.');
+    console.error('[Insertabot] Missing or invalid apiBase in config.');
     return;
   }
 
@@ -118,12 +117,7 @@
   // WordPress signs the token server-side using the customer's api_key as the
   // HMAC secret. The raw api_key is never sent to the browser.
 
-  var wpFetchOptions = {
-    credentials: 'same-origin',
-    headers: wpNonce ? { 'X-WP-Nonce': wpNonce } : {}
-  };
-
-  fetchWithTimeout(tokenEndpoint, wpFetchOptions, 5000)
+  fetchWithTimeout(tokenEndpoint, { credentials: 'same-origin' }, 5000)
     .then(function (res) {
       if (!res.ok) {
         throw new Error('WP token request failed: ' + res.status);

@@ -39,27 +39,17 @@ class Insertabot_Security {
     }
 
     /**
-     * Get encryption key derived from WordPress salts
+     * Get encryption key from persistent database storage
      *
      * @return string 32-byte key for Sodium
      */
     private static function get_encryption_key() {
-        // Use WordPress salts to create a unique encryption key
-        $salt = defined('AUTH_KEY') ? AUTH_KEY : '';
-        $salt .= defined('SECURE_AUTH_KEY') ? SECURE_AUTH_KEY : '';
-        $salt .= defined('LOGGED_IN_KEY') ? LOGGED_IN_KEY : '';
-
-        if (empty($salt)) {
-            // Generate a secure fallback key using WordPress functions
-            $salt = wp_salt('auth') . wp_salt('secure_auth') . wp_salt('logged_in');
-            if (empty($salt)) {
-                // Final fallback - use a cryptographically secure random value
-                $salt = 'insertabot_' . wp_generate_password(32, true, true);
-            }
+        $key = get_option('insertabot_encryption_key');
+        if (empty($key)) {
+            $key = wp_generate_password(64, true, true);
+            update_option('insertabot_encryption_key', $key, false);
         }
-
-        // Create a 256-bit (32-byte) key - required for both Sodium and AES-256
-        return hash('sha256', $salt, true);
+        return hash('sha256', $key, true);
     }
 
     /**

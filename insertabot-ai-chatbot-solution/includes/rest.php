@@ -61,8 +61,12 @@ function insertabot_widget_token_endpoint( WP_REST_Request $request ) {
         );
     }
 
-    // Increment counter; window resets after 60 s.
-    set_transient( $rate_key, $hits + 1, 60 );
+    // Increment counter only; set expiration only on first hit
+    if ( $hits === 0 ) {
+        set_transient( $rate_key, 1, 60 );
+    } else {
+        set_transient( $rate_key, $hits + 1, get_option( '_transient_timeout_' . $rate_key ) - time() );
+    }
 
     // ------------------------------------------------------------------ //
     // 2. Retrieve the stored (encrypted) API key.                        //

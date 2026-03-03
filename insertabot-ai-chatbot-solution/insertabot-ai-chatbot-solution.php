@@ -145,20 +145,22 @@ class Insertabot_Plugin {
             return;
         }
 
-        $api_base = get_option('insertabot_api_base', INSERTABOT_API_URL);
+        wp_enqueue_script(
+            'insertabot-bridge',
+            INSERTABOT_PLUGIN_URL . 'assets/widget-bridge.js',
+            array(),
+            INSERTABOT_VERSION,
+            true
+        );
 
-        // Provide a small local bridge script that will request a short-lived token
-        // and then dynamically load the external widget. This prevents raw key leakage.
-        $token_endpoint = esc_url_raw(rest_url('insertabot/v1/widget-token'));
-        $nonce = wp_create_nonce('wp_rest');
-        ?>
-        <script
-            src="<?php echo esc_url(INSERTABOT_PLUGIN_URL); ?>assets/widget-bridge.js"
-            data-api-base="<?php echo esc_attr($api_base); ?>"
-            data-token-endpoint="<?php echo esc_attr($token_endpoint); ?>"
-            data-nonce="<?php echo esc_attr($nonce); ?>"
-        ></script>
-        <?php
+        wp_localize_script(
+            'insertabot-bridge',
+            'insertabotConfig',
+            array(
+                'apiBase' => get_option('insertabot_api_base', INSERTABOT_API_URL),
+                'tokenEndpoint' => esc_url_raw(rest_url('insertabot/v1/widget-token'))
+            )
+        );
     }
     
     /**
