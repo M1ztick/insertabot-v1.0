@@ -790,7 +790,10 @@ export function getDashboardHTML(
     try {
       const res = await fetch('/api/checkout/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': '${escapeHtml(customer.api_key)}'
+        },
         credentials: 'include',
       });
       const data = await res.json();

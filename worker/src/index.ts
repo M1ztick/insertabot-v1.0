@@ -1508,7 +1508,7 @@ export default {
           }
         }
 
-        // Stripe webhook handler
+
         // Widget token exchange — converts the ephemeral WP HMAC token into a
         // short-lived worker session token. The raw api_key is never exposed.
         if (url.pathname === "/v1/widget-token/exchange" && request.method === "POST") {
