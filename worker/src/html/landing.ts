@@ -611,7 +611,7 @@ export function getLandingHTML(origin: string): string {
         <li>Priority support</li>
         <li>Cancel anytime</li>
       </ul>
-      <a href="https://payments.insertabot.io/b/9B64gzdo4cnk2rz8QS0VO00" class="plan-cta primary">Upgrade to Pro →</a>
+      <a href="/signup" class="plan-cta primary">Upgrade to Pro →</a>
     </div>
 
   </div>
