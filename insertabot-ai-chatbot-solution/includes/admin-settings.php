@@ -164,7 +164,7 @@ final class Insertabot_Admin_Settings {
 		// Resolve and cache the customer_id from the Worker so future
 		// ephemeral tokens can use the O(1) v2 format.  A failure here is
 		// non-fatal — the plugin will fall back to the v1 O(N) format.
-		$api_base = get_option(self::OPTION_BASE, '');
+		$api_base = self::get_api_base();
 		if (!empty($api_base)) {
 			$customer_id = self::resolve_customer_id($value, $api_base);
 			if ($customer_id) {
