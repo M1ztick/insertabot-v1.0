@@ -111,16 +111,14 @@ final class Insertabot_Admin_Settings {
 	public static function sanitize_api_key($value): string {
 		$value = is_string($value) ? sanitize_text_field($value) : '';
 
-		// Clear API key
+		// Empty submission — the field is always blank by design (key is never pre-filled).
+		// Only clear the stored key if there isn't one already; otherwise treat as no-change.
 		if ($value === '') {
-			// Store cleared value via secure storage
-			if (class_exists('Insertabot_Security')) {
-				Insertabot_Security::store_api_key('');
+			if (class_exists('Insertabot_Security') && Insertabot_Security::get_api_key() !== '') {
+				// Key already stored — blank field means "leave it alone".
+				return '';
 			}
-			// Also clear the cached customer_id.
-			delete_option(self::OPTION_CUST_ID);
-			// Force disable when API key is cleared.
-			update_option(self::OPTION_EN, false);
+			// No key stored yet — nothing to clear.
 			return '';
 		}
 
