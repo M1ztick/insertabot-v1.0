@@ -20,9 +20,9 @@ echo ""
 run_query() {
     local query="$1"
     if [ "$ENVIRONMENT" = "local" ]; then
-        wrangler d1 execute DB --local --command="$query"
+        wrangler d1 execute insertabot-development --local --command="$query"
     else
-        wrangler d1 execute DB --command="$query"
+        wrangler d1 execute insertabot-production --command="$query"
     fi
 }
 

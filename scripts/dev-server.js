@@ -277,10 +277,9 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Serve widget.js from worker/public/
+  // Proxy widget.js to Cloudflare Worker (dynamic, no longer a static file)
   if (pathname === '/widget.js') {
-    const widgetPath = path.join(__dirname, 'worker', 'public', 'widget.js');
-    serveStaticFile(req, res, widgetPath);
+    await proxyToWorker(req, res, pathname);
     return;
   }
 

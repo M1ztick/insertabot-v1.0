@@ -75,7 +75,7 @@ INSERT INTO widget_configs (
 ) VALUES (
   '${customerId}', '#6366f1', 'bottom-right', 'Hi! How can I help you today?',
   'Assistant', NULL, NULL, 'Type your message...', 1,
-  'llama-3.3-70b', 0.7, 500, 'You are a helpful customer service assistant.',
+  '@cf/meta/llama-3.3-70b-instruct-fp8-fast', 0.7, 500, 'You are a helpful customer service assistant.',
   NULL, unixepoch(), unixepoch()
 );`;
     
@@ -111,7 +111,7 @@ INSERT INTO widget_configs (
     console.log(`   Rate Limits: ${limits.hour}/hour, ${limits.day}/day`);
     
     console.log('\n📄 Widget Integration Code:');
-    console.log(`<script src="https://cdn.insertabot.io/widget.js"`);
+    console.log(`<script src="https://insertabot.io/widget.js"`);
     console.log(`        data-api-key="${apiKey}"></script>`);
     
     // Clean up

@@ -80,4 +80,4 @@ SELECT
   w.greeting_message
 FROM customers c
 LEFT JOIN widget_configs w ON c.customer_id = w.customer_id
-WHERE c.api_key = 'ib_sk_demo_REPLACE';
+WHERE c.customer_id = 'cust_insertabot_001';

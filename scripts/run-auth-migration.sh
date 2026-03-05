@@ -59,10 +59,10 @@ echo ""
 
 if [ "$ENVIRONMENT" = "local" ]; then
     # Apply to local D1 database
-    wrangler d1 execute DB --local --file="$MIGRATION_FILE"
+    wrangler d1 execute insertabot-development --local --file="$MIGRATION_FILE"
 else
     # Apply to production D1 database
-    wrangler d1 execute DB --file="$MIGRATION_FILE"
+    wrangler d1 execute insertabot-production --file="$MIGRATION_FILE"
 fi
 
 echo ""
