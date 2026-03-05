@@ -9,8 +9,6 @@ import {
 import { withDatabase, AppError, ErrorCode, AuthenticationError } from "./errors";
 import { logSecurityEvent } from "./security-audit";
 
-// Cloudflare D1 Database type
-type D1Database = any;
 
 export interface Enable2FAResponse {
   success: boolean;

@@ -8,8 +8,6 @@ import { sendVerificationEmail, sendWelcomeEmail } from './email-service';
 import { logSecurityEvent } from './security-audit';
 import { AppError, ErrorCode, withDatabase } from './errors';
 
-// Cloudflare D1 Database type
-type D1Database = any;
 
 // ==================== Send Verification Email ====================
 

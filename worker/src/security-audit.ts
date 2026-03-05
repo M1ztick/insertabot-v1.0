@@ -22,7 +22,9 @@ export type SecurityEventType =
 	| 'session_invalidated'
 	| 'account_created'
 	| 'account_locked'
-	| 'account_unlocked';
+	| 'account_unlocked'
+	| 'verification_email_sent'
+	| 'email_verified';
 
 export interface SecurityAuditEvent {
 	customer_id: string;
@@ -86,7 +88,13 @@ export async function getSecurityEvents(
 			.bind(customerId, limit)
 			.all();
 
-		return result.results || [];
+		return (result.results || []) as Array<{
+			event_type: SecurityEventType;
+			timestamp: number;
+			ip_address: string | null;
+			user_agent: string | null;
+			metadata: string | null;
+		}>;
 	}, 'getSecurityEvents');
 }
 

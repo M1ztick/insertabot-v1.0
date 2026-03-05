@@ -143,8 +143,6 @@ export function sanitizeForLog(input: string): string {
 }
 
 // Tenant context validation
-import { D1Database } from "@cloudflare/workers-types";
-
 /**
  * Validates API key and returns associated tenant ID
  * @throws Error if API key is invalid

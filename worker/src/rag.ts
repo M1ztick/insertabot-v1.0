@@ -81,7 +81,7 @@ export async function searchRelevantDocuments(
 			returnMetadata: true,
 		});
 
-		return results.matches.map((match) => ({
+		return results.matches.map((match: VectorizeMatch) => ({
 			id: match.id,
 			content: typeof match.metadata?.content === 'string' ? match.metadata.content : '',
 			score: match.score,
