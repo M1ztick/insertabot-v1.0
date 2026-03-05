@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
 define('INSERTABOT_VERSION', '1.0.5');
 define('INSERTABOT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('INSERTABOT_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('INSERTABOT_API_URL', 'https://api.insertabot.io');
+define('INSERTABOT_API_URL', 'https://insertabot.io');
 define('INSERTABOT_WEBSITE_URL', 'https://insertabot.io');
 
 // Load required includes

@@ -44,7 +44,7 @@
 
 **Fix:**
 1. Verify API Base URL in Settings → Insertabot
-   - Should be: `https://api.insertabot.io`
+   - Should be: `https://insertabot.io`
    - NO trailing slash
    
 2. Re-save your API key:
@@ -119,7 +119,7 @@
 **Fix:**
 1. Verify Worker is deployed and accessible:
    ```bash
-   curl -X POST https://api.insertabot.io/api/auth/key-info \
+   curl -X POST https://insertabot.io/api/auth/key-info \
      -H "Content-Type: application/json" \
      -d '{"api_key":"YOUR_API_KEY"}'
    ```

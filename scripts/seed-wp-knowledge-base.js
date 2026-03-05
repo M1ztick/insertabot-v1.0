@@ -44,7 +44,7 @@ Key features: real-time web search powered by Tavily API (answers are always cur
 
 System requirements: WordPress 5.9 or higher, PHP 7.4 or higher.
 
-The plugin connects to the Insertabot API at api.insertabot.io. It requires an API key from insertabot.io to function. The free plan provides 20 messages per day. The Pro plan at $9.99/month provides 500 embedded widget messages per month and unlimited playground messages.`,
+The plugin connects to the Insertabot API at insertabot.io. It requires an API key from insertabot.io to function. The free plan provides 20 messages per day. The Pro plan at $9.99/month provides 500 embedded widget messages per month and unlimited playground messages.`,
   },
   {
     title: 'Insertabot WordPress Plugin Installation Guide',
@@ -94,7 +94,7 @@ API Key: Paste your Insertabot API key here (format: ib_sk_...). The key is encr
 
 Enable Chatbot (toggle): Shows or hides the chat widget across the entire site. This toggle is disabled and cannot be turned on until a valid API key is stored. Toggle off at any time to temporarily hide the widget without removing the API key.
 
-API Base URL: An advanced field pre-filled with https://api.insertabot.io. Leave this at the default value unless you are specifically instructed to use a custom API endpoint (e.g. for white-label or self-hosted deployments).
+API Base URL: An advanced field pre-filled with https://insertabot.io. Leave this at the default value unless you are specifically instructed to use a custom API endpoint (e.g. for white-label or self-hosted deployments).
 
 Bot appearance (name, greeting message, colors, avatar) is configured in the Insertabot dashboard at insertabot.io/dashboard, not from this settings page.`,
   },
@@ -134,7 +134,7 @@ Token-based widget authentication: instead of sending the API key to the browser
 
 GDPR compliance: the plugin implements WordPress personal data exporters and erasers. Site administrators can export or delete a user's personal data via Tools > Export Personal Data or Tools > Erase Personal Data in the WordPress admin. IP addresses stored in security logs are anonymized (last octet zeroed out).
 
-Data transmitted: when the chatbot is active, user chat messages and the site URL are sent to api.insertabot.io for AI processing. No personal data is shared with third parties beyond what is necessary for chatbot operation. Insertabot's privacy policy is at insertabot.io/privacy.
+Data transmitted: when the chatbot is active, user chat messages and the site URL are sent to insertabot.io for AI processing. No personal data is shared with third parties beyond what is necessary for chatbot operation. Insertabot's privacy policy is at insertabot.io/privacy.
 
 Local WordPress database storage: encrypted API key (option: insertabot_api_key_encrypted), enabled/disabled state, API base URL, and optional anonymized security logs.`,
   },

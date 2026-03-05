@@ -82,7 +82,7 @@ Add a customizable AI chatbot to your WordPress site. Real-time web search, unli
 
 This plugin connects to the Insertabot API service to provide AI chatbot functionality.
 
-**Service URL:** https://api.insertabot.io
+**Service URL:** https://insertabot.io
 
 **When the chatbot is enabled, the following data is transmitted:**
 * User chat messages and questions
