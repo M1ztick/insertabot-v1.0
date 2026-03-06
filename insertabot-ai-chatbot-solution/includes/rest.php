@@ -118,12 +118,20 @@ function insertabot_widget_token_endpoint( WP_REST_Request $request ) {
         'timestamp' => $timestamp,
     ) );
 
-    return rest_ensure_response(
+    $response = rest_ensure_response(
         array(
             'token'      => $token,
             'expires_at' => $timestamp + $ttl,
         )
     );
+
+    // Prevent any cache layer from serving a stale token to multiple visitors.
+    // Each token embeds a single-use nonce; a cached response would cause the
+    // second requester to receive a 401 "Token already used" from the Worker.
+    $response->header( 'Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0' );
+    $response->header( 'Pragma', 'no-cache' );
+
+    return $response;
 }
 
 /**

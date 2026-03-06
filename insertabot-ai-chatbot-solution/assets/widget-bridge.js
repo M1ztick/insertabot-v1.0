@@ -117,7 +117,10 @@
   // WordPress signs the token server-side using the customer's api_key as the
   // HMAC secret. The raw api_key is never sent to the browser.
 
-  fetchWithTimeout(tokenEndpoint, { credentials: 'same-origin' }, 5000)
+  // Append a timestamp so browsers and CDN/proxy caches never serve a stale
+  // token to a second visitor — each token contains a single-use nonce.
+  var bustUrl = tokenEndpoint + (tokenEndpoint.indexOf('?') === -1 ? '?' : '&') + '_t=' + Date.now();
+  fetchWithTimeout(bustUrl, { credentials: 'same-origin' }, 5000)
     .then(function (res) {
       if (!res.ok) {
         throw new Error('WP token request failed: ' + res.status);
