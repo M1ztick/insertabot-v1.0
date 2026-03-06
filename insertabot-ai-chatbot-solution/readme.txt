@@ -205,6 +205,30 @@ Visit your [dashboard](https://insertabot.io/dashboard) or click the upgrade lin
 
 == Changelog ==
 
+= 1.0.8 =
+* Fix: "Upgrade to Pro" button in plugin settings now routes directly to the Insertabot dashboard — upgrade is one click away instead of buried behind the landing page
+* Fix: "Upgrade to Pro" on the public pricing page now routes to login instead of signup — existing users no longer hit a dead end
+* Fix: Various backend config corrections (DB binding name, AI model ID format, demo customer query, widget.js delivery route)
+
+= 1.0.7 =
+* Fix: Stale customer_id cache was causing 401 errors on widget token exchange — ID is now resolved on every API key save, including fresh installs
+* Fix: API base URL now resolved through the proper internal method instead of a raw option lookup that could return empty on new installs
+* Fix: Static widget.js and widget-dev.js files removed — widget is now served exclusively through the tokenized Worker endpoint, eliminating a delivery conflict
+
+= 1.0.6 =
+* Fix: API endpoint corrected project-wide from api.insertabot.io to insertabot.io/api/* — the api subdomain was never live and caused silent failures across the plugin and Worker
+* Fix: Settings menu was resetting on every "Save Changes" click when an API key was already stored
+* New: TROUBLESHOOTING.md added — step-by-step guide for users experiencing installation or widget delivery issues
+
+= 1.0.5 =
+* Fix: upgradeToPro() was silently returning 401 — X-API-Key header was missing from the Stripe checkout fetch request
+* Fix: handleWidgetTokenExchange route had been accidentally removed from the Worker, breaking widget authentication on all WordPress installs
+* Fix: "Upgrade to Pro" on landing page now correctly directs existing users through login before checkout
+* New: Admin diagnostics panel — append `?insertabot_debug=1` to any page URL (admin-only) to view API status, plugin config, customer ID resolution, and widget readiness at a glance
+
+= 1.0.4 =
+* Fix: New customers were blocked from day one — null or empty allowed_domains was incorrectly refusing all widget embed requests instead of allowing all origins as documented
+
 = 1.0.3 =
 * Fix: Widget no longer requires manual script tag in footer — plugin now injects it automatically on all pages
 * Fix: Removed `async` attribute from bridge script that was preventing `document.currentScript` from resolving widget configuration
@@ -228,6 +252,18 @@ Visit your [dashboard](https://insertabot.io/dashboard) or click the upgrade lin
 * Customizable appearance
 
 == Upgrade Notice ==
+
+= 1.0.8 =
+Fixes the upgrade flow — the "Upgrade to Pro" button in plugin settings now goes directly to your dashboard. Also corrects several backend config issues. Recommended for all users.
+
+= 1.0.7 =
+Fixes a 401 error on widget token exchange that could occur on fresh installs. Upgrade if your widget stopped loading after saving the API key.
+
+= 1.0.6 =
+Corrects a critical API endpoint URL used by the plugin. If you installed between 1.0.3 and 1.0.5, upgrade to ensure proper API communication.
+
+= 1.0.5 =
+Fixes widget authentication breaking silently and the Pro upgrade flow. Upgrade recommended for all users.
 
 = 1.0.3 =
 Fixes automatic widget injection — the chatbot now appears without any manual script tag setup. Upgrade recommended for all users.
