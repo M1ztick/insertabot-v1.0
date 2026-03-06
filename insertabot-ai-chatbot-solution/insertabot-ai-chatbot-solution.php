@@ -33,7 +33,6 @@ $insertabot_required_files = array(
     'includes/admin-settings.php',
     'includes/rest.php',
     'includes/privacy.php',
-    'includes/diagnostics.php',
 );
 
 foreach ( $insertabot_required_files as $insertabot_file ) {

@@ -218,13 +218,10 @@ Visit your [dashboard](https://insertabot.io/dashboard) or click the upgrade lin
 = 1.0.6 =
 * Fix: API endpoint corrected project-wide from api.insertabot.io to insertabot.io/api/* — the api subdomain was never live and caused silent failures across the plugin and Worker
 * Fix: Settings menu was resetting on every "Save Changes" click when an API key was already stored
-* New: TROUBLESHOOTING.md added — step-by-step guide for users experiencing installation or widget delivery issues
-
 = 1.0.5 =
 * Fix: upgradeToPro() was silently returning 401 — X-API-Key header was missing from the Stripe checkout fetch request
 * Fix: handleWidgetTokenExchange route had been accidentally removed from the Worker, breaking widget authentication on all WordPress installs
 * Fix: "Upgrade to Pro" on landing page now correctly directs existing users through login before checkout
-* New: Admin diagnostics panel — append `?insertabot_debug=1` to any page URL (admin-only) to view API status, plugin config, customer ID resolution, and widget readiness at a glance
 
 = 1.0.4 =
 * Fix: New customers were blocked from day one — null or empty allowed_domains was incorrectly refusing all widget embed requests instead of allowing all origins as documented
