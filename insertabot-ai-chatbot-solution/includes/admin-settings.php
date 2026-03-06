@@ -374,7 +374,7 @@ final class Insertabot_Admin_Settings {
 
 		$site_url = defined('INSERTABOT_WEBSITE_URL') ? INSERTABOT_WEBSITE_URL : '';
 		$signup   = $site_url ? $site_url . '/signup' : '';
-		$pricing  = $site_url ? $site_url . '/?pricing=true' : '';
+		$pricing  = $site_url ? $site_url . '/dashboard' : '';
 		$docs     = $site_url ? $site_url . '/docs' : '';
 		$dash     = $site_url ? $site_url . '/dashboard' : '';
 

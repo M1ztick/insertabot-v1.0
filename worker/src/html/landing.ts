@@ -577,7 +577,7 @@ export function getLandingHTML(origin: string): string {
   </section>
 </main>
 
-<section class="pricing">
+<section class="pricing" id="pricing">
   <h2>Simple, Honest Pricing</h2>
   <p class="pricing-subtitle">No surprises. No hidden fees. Cancel anytime.</p>
 
@@ -611,7 +611,7 @@ export function getLandingHTML(origin: string): string {
         <li>Priority support</li>
         <li>Cancel anytime</li>
       </ul>
-      <a href="/signup" class="plan-cta primary">Upgrade to Pro →</a>
+      <a href="/login" class="plan-cta primary">Upgrade to Pro →</a>
     </div>
 
   </div>
