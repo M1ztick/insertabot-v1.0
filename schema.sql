@@ -23,6 +23,31 @@ CREATE TABLE IF NOT EXISTS customers (
     failed_login_attempts INTEGER DEFAULT 0,
     account_locked_until INTEGER, -- Unix timestamp
     password_reset_token TEXT,
+    password_reset_-- Insertabot SaaS Multi-Tenant Database Schema
+-- For Cloudflare D1 (SQLite-compatible)
+
+-- Customers table
+CREATE TABLE IF NOT EXISTS customers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    company_name TEXT NOT NULL,
+    website_url TEXT,
+    plan_type TEXT DEFAULT 'free', -- free, starter, pro, enterprise
+    status TEXT DEFAULT 'active', -- active, suspended, cancelled
+    api_key TEXT UNIQUE NOT NULL,
+    created_at INTEGER NOT NULL, -- Unix timestamp
+    updated_at INTEGER NOT NULL,
+
+    -- Auth
+    password_hash TEXT,
+    password_salt TEXT,
+    totp_enabled BOOLEAN DEFAULT 0,
+    totp_secret TEXT,
+    backup_codes TEXT, -- JSON array of hashed backup codes
+    failed_login_attempts INTEGER DEFAULT 0,
+    account_locked_until INTEGER, -- Unix timestamp
+    password_reset_token TEXT,
     password_reset_expires INTEGER, -- Unix timestamp
     last_login_at INTEGER,
 
@@ -127,6 +152,7 @@ CREATE TABLE IF NOT EXISTS widget_configs (
 );
 
 CREATE INDEX idx_widget_customer ON widget_configs(customer_id);
+CREATE UNIQUE INDEX idx_widget_customer_unique ON widget_configs(customer_id);
 
 -- Knowledge base entries (for RAG)
 CREATE TABLE IF NOT EXISTS knowledge_base (
@@ -249,7 +275,7 @@ CREATE INDEX idx_api_keys_hash ON api_keys(key_hash);
 CREATE INDEX idx_api_keys_customer ON api_keys(customer_id);
 
 -- Seed data for development
-INSERT INTO customers (customer_id, email, company_name, website_url, plan_type, api_key, created_at, updated_at, rate_limit_per_hour, rate_limit_per_day)
+INSERT OR IGNORE INTO customers (customer_id, email, company_name, website_url, plan_type, api_key, created_at, updated_at, rate_limit_per_hour, rate_limit_per_day)
 VALUES (
     'cust_demo_001',
     'demo@insertabot.io',
@@ -263,7 +289,7 @@ VALUES (
     10000
 );
 
-INSERT INTO widget_configs (customer_id, bot_name, greeting_message, system_prompt, created_at, updated_at)
+INSERT OR IGNORE INTO widget_configs (customer_id, bot_name, greeting_message, system_prompt, created_at, updated_at)
 VALUES (
     'cust_demo_001',
     'Demo Bot',
