@@ -23,31 +23,6 @@ CREATE TABLE IF NOT EXISTS customers (
     failed_login_attempts INTEGER DEFAULT 0,
     account_locked_until INTEGER, -- Unix timestamp
     password_reset_token TEXT,
-    password_reset_-- Insertabot SaaS Multi-Tenant Database Schema
--- For Cloudflare D1 (SQLite-compatible)
-
--- Customers table
-CREATE TABLE IF NOT EXISTS customers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    customer_id TEXT UNIQUE NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    company_name TEXT NOT NULL,
-    website_url TEXT,
-    plan_type TEXT DEFAULT 'free', -- free, starter, pro, enterprise
-    status TEXT DEFAULT 'active', -- active, suspended, cancelled
-    api_key TEXT UNIQUE NOT NULL,
-    created_at INTEGER NOT NULL, -- Unix timestamp
-    updated_at INTEGER NOT NULL,
-
-    -- Auth
-    password_hash TEXT,
-    password_salt TEXT,
-    totp_enabled BOOLEAN DEFAULT 0,
-    totp_secret TEXT,
-    backup_codes TEXT, -- JSON array of hashed backup codes
-    failed_login_attempts INTEGER DEFAULT 0,
-    account_locked_until INTEGER, -- Unix timestamp
-    password_reset_token TEXT,
     password_reset_expires INTEGER, -- Unix timestamp
     last_login_at INTEGER,
 
@@ -121,7 +96,7 @@ CREATE INDEX idx_security_logs_timestamp ON security_logs(timestamp);
 -- Widget configurations
 CREATE TABLE IF NOT EXISTS widget_configs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    customer_id TEXT NOT NULL,
+    customer_id TEXT NOT NULL UNIQUE,
 
     -- Appearance
     primary_color TEXT DEFAULT '#6366f1',
@@ -152,7 +127,6 @@ CREATE TABLE IF NOT EXISTS widget_configs (
 );
 
 CREATE INDEX idx_widget_customer ON widget_configs(customer_id);
-CREATE UNIQUE INDEX idx_widget_customer_unique ON widget_configs(customer_id);
 
 -- Knowledge base entries (for RAG)
 CREATE TABLE IF NOT EXISTS knowledge_base (
