@@ -48,11 +48,11 @@ CREATE TABLE IF NOT EXISTS customers (
     trial_ends_at INTEGER
 );
 
-CREATE INDEX idx_customers_api_key ON customers(api_key);
-CREATE INDEX idx_customers_email ON customers(email);
-CREATE INDEX idx_customers_status ON customers(status);
-CREATE INDEX idx_customers_reset_token ON customers(password_reset_token);
-CREATE INDEX idx_customers_verification_token ON customers(email_verification_token);
+CREATE INDEX IF NOT EXISTS idx_customers_api_key ON customers(api_key);
+CREATE INDEX IF NOT EXISTS idx_customers_email ON customers(email);
+CREATE INDEX IF NOT EXISTS idx_customers_status ON customers(status);
+CREATE INDEX IF NOT EXISTS idx_customers_reset_token ON customers(password_reset_token);
+CREATE INDEX IF NOT EXISTS idx_customers_verification_token ON customers(email_verification_token);
 
 -- User sessions
 CREATE TABLE IF NOT EXISTS sessions (
@@ -71,9 +71,9 @@ CREATE TABLE IF NOT EXISTS sessions (
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_sessions_id ON sessions(session_id);
-CREATE INDEX idx_sessions_customer ON sessions(customer_id);
-CREATE INDEX idx_sessions_expires ON sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_sessions_id ON sessions(session_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_customer ON sessions(customer_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
 
 -- Security audit trail
 CREATE TABLE IF NOT EXISTS security_logs (
@@ -90,8 +90,8 @@ CREATE TABLE IF NOT EXISTS security_logs (
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_security_logs_customer_event ON security_logs(customer_id, event_type);
-CREATE INDEX idx_security_logs_timestamp ON security_logs(timestamp);
+CREATE INDEX IF NOT EXISTS idx_security_logs_customer_event ON security_logs(customer_id, event_type);
+CREATE INDEX IF NOT EXISTS idx_security_logs_timestamp ON security_logs(timestamp);
 
 -- Widget configurations
 CREATE TABLE IF NOT EXISTS widget_configs (
@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS widget_configs (
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_widget_customer ON widget_configs(customer_id);
+CREATE INDEX IF NOT EXISTS idx_widget_customer ON widget_configs(customer_id);
 
 -- Knowledge base entries (for RAG)
 CREATE TABLE IF NOT EXISTS knowledge_base (
@@ -147,8 +147,8 @@ CREATE TABLE IF NOT EXISTS knowledge_base (
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_knowledge_customer ON knowledge_base(customer_id);
-CREATE INDEX idx_knowledge_source ON knowledge_base(source_type);
+CREATE INDEX IF NOT EXISTS idx_knowledge_customer ON knowledge_base(customer_id);
+CREATE INDEX IF NOT EXISTS idx_knowledge_source ON knowledge_base(source_type);
 
 -- Usage tracking (for billing and analytics)
 CREATE TABLE IF NOT EXISTS usage_logs (
@@ -180,8 +180,8 @@ CREATE TABLE IF NOT EXISTS usage_logs (
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_usage_customer_timestamp ON usage_logs(customer_id, timestamp);
-CREATE INDEX idx_usage_timestamp ON usage_logs(timestamp);
+CREATE INDEX IF NOT EXISTS idx_usage_customer_timestamp ON usage_logs(customer_id, timestamp);
+CREATE INDEX IF NOT EXISTS idx_usage_timestamp ON usage_logs(timestamp);
 
 -- Conversations (optional - for analytics)
 CREATE TABLE IF NOT EXISTS conversations (
@@ -204,8 +204,8 @@ CREATE TABLE IF NOT EXISTS conversations (
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_conversations_customer ON conversations(customer_id);
-CREATE INDEX idx_conversations_session ON conversations(session_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_customer ON conversations(customer_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_session ON conversations(session_id);
 
 -- Messages (optional - for conversation history)
 CREATE TABLE IF NOT EXISTS messages (
@@ -224,8 +224,8 @@ CREATE TABLE IF NOT EXISTS messages (
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_messages_conversation ON messages(conversation_id);
-CREATE INDEX idx_messages_timestamp ON messages(timestamp);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp);
 
 -- API Keys (for rotating keys, multiple keys per customer)
 CREATE TABLE IF NOT EXISTS api_keys (
@@ -245,8 +245,8 @@ CREATE TABLE IF NOT EXISTS api_keys (
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_api_keys_hash ON api_keys(key_hash);
-CREATE INDEX idx_api_keys_customer ON api_keys(customer_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash);
+CREATE INDEX IF NOT EXISTS idx_api_keys_customer ON api_keys(customer_id);
 
 -- Seed data for development
 INSERT OR IGNORE INTO customers (customer_id, email, company_name, website_url, plan_type, api_key, created_at, updated_at, rate_limit_per_hour, rate_limit_per_day)
