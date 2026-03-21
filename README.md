@@ -52,7 +52,7 @@ insertabot-v1.0/
 
 - **Runtime**: Cloudflare Workers
 - **Database**: D1 (SQLite)
-- **AI**: Workers AI (Llama 3.1)
+- **AI**: Workers AI (Llama 3.3 70B)
 - **Storage**: KV, Vectorize
 - **Language**: TypeScript
 
