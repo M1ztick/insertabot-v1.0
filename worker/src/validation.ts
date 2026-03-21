@@ -16,9 +16,9 @@ export const chatMessageSchema = z.object({
       .max(10000, "Message exceeds maximum length of 10000 characters")
       .refine(
         (val) => {
-          // Prevent SQL injection attempts
+          // Prevent common SQL injection patterns (parameterised queries handle
+          // actual injection, but we still surface obvious attempts early)
           const lowerVal = val.toLowerCase();
-          if (lowerVal.includes("sql") && val.includes(";")) return false;
           if (lowerVal.includes("drop table")) return false;
           if (lowerVal.includes("delete from")) return false;
           return true;
