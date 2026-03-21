@@ -18,10 +18,9 @@ export interface EmbeddingResult {
 export async function generateEmbedding(env: Env, text: string): Promise<number[]> {
 	try {
 		// Use Cloudflare Workers AI to generate embeddings
-		// @ts-ignore - AI binding types
 		const response = await env.AI.run('@cf/baai/bge-base-en-v1.5', {
 			text: [text],
-		});
+		}) as { data: number[][] };
 
 		return response.data[0];
 	} catch (error) {

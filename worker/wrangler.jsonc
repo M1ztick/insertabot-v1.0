@@ -84,6 +84,12 @@
   "ai": {
     "binding": "AI"
   },
+
+  // Cron triggers — run scheduled() handler periodically
+  // "0 3 * * *" = every day at 03:00 UTC
+  "triggers": {
+    "crons": ["0 3 * * *"]
+  },
   
   // Environment variables
   // NOTE: Do NOT add secrets here. Manage secrets via:

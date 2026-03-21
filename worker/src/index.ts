@@ -3,15 +3,8 @@
  * Multi-tenant chatbot service with AI Gateway integration
  */
 
-// Define Cloudflare Workers types
-type D1Database = any;
-type VectorizeIndex = any;
-type KVNamespace = any;
-type AnalyticsEngineDataset = any;
-type ExecutionContext = any;
-
 import { getRelevantContext } from "./rag";
-import { StructuredLogger } from "./monitoring";
+import { cleanupExpiredSessions } from "./session";import { StructuredLogger } from "./monitoring";
 import {
   createCheckoutSession,
   verifyWebhookSignature,
@@ -76,13 +69,23 @@ import {
   withDatabase,
   withRetry
 } from "./errors";
+import {
+  createAICircuitBreaker,
+  createSearchCircuitBreaker,
+} from "./circuit-breaker";
+
+// =============================================================================
+// Module-level circuit breakers (persist across requests in the same isolate)
+// =============================================================================
+const aiCircuitBreaker = createAICircuitBreaker();
+const searchCircuitBreaker = createSearchCircuitBreaker();
 
 export interface Env {
   DB: D1Database;
   VECTORIZE: VectorizeIndex;
   RATE_LIMITER: KVNamespace;
   ANALYTICS: AnalyticsEngineDataset;
-  AI: any; // Cloudflare Workers AI binding
+  AI: Ai; // Cloudflare Workers AI binding
   ENVIRONMENT: string; // 'development' | 'production'
   CORS_ORIGINS: string; // comma-separated
   STRIPE_SECRET_KEY?: string; // Stripe API secret key
@@ -417,6 +420,18 @@ const SECURITY_HEADERS: HeadersInit = {
   "X-Frame-Options": "SAMEORIGIN",
   "X-XSS-Protection": "1; mode=block",
   "Referrer-Policy": "strict-origin-when-cross-origin",
+  // Restrict resource loading to same origin; allow workers AI / Stripe / Tavily
+  // as external connect targets used by the widget and dashboard.
+  "Content-Security-Policy": [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",   // unsafe-inline required for inline dashboard JS
+    "style-src 'self' 'unsafe-inline'",    // unsafe-inline required for inline dashboard CSS
+    "img-src 'self' data: https:",
+    "connect-src 'self' https://api.stripe.com https://api.tavily.com",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; "),
 };
 
 // Validate origin against customer's allowed domains
@@ -631,9 +646,6 @@ function validateChatMessage(message: any): void {
   if (trimmed.length > 10000) {
     throw new ValidationError('Message exceeds maximum length of 10000 characters');
   }
-  if (trimmed.toLowerCase().includes("sql") && trimmed.includes(";")) {
-    throw new ValidationError('Invalid message content detected');
-  }
 }
 
 function isCoherentResponse(content: string): boolean {
@@ -641,7 +653,9 @@ function isCoherentResponse(content: string): boolean {
   if (content.length < 10) return false;
   if (content.length > 50000) return false;
   if (content.toLowerCase() === "[error]") return false;
-  if (content.includes("undefined") || content.includes("null")) return false;
+  // Reject only if the entire response IS the literal JS values, not if the
+  // response merely mentions the words in a legitimate context.
+  if (content.trim() === "undefined" || content.trim() === "null") return false;
 
   const words = content.split(/\s+/);
   const wordCounts = new Map<string, number>();
@@ -781,15 +795,17 @@ async function handleChatRequest(
       });
 
       try {
-        const searchResults = await withRetry(
-          () => withTimeout(
-            () => performWebSearch(textContent, env.TAVILY_API_KEY!, 5),
-            10000,
-            'web search'
-          ),
-          2,
-          1000,
-          'web search with retry'
+        const searchResults = await searchCircuitBreaker.execute(() =>
+          withRetry(
+            () => withTimeout(
+              () => performWebSearch(textContent, env.TAVILY_API_KEY!, 5),
+              10000,
+              'web search'
+            ),
+            2,
+            1000,
+            'web search with retry'
+          )
         );
 
         if (searchResults.length > 0) {
@@ -820,23 +836,27 @@ async function handleChatRequest(
 
     const shouldStream = chatRequest.stream === true;
 
-    // AI model call with timeout and retry
-    const aiResponse = await withRetry(
-      () => withTimeout(
-        () => env.AI.run("@cf/meta/llama-3.3-70b-instruct-fp8-fast", {
-          messages: messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-          max_tokens: Math.min(maxTokens, 2000),
-          stream: false,
-        }),
-        30000,
-        'AI model inference'
-      ),
-      2,
-      1000,
-      'AI model call'
+    // AI model call with circuit breaker, timeout, and retry
+    const aiResponse = await aiCircuitBreaker.execute(() =>
+      withRetry(
+        () => withTimeout(
+          () => env.AI.run("@cf/meta/llama-3.3-70b-instruct-fp8-fast", {
+            messages: messages.map((m) => ({
+              role: m.role,
+              // Workers AI expects plain string content; extract text from
+              // multimodal (array) messages before sending to the model.
+              content: typeof m.content === 'string' ? m.content : extractTextFromMessage(m.content),
+            })),
+            max_tokens: Math.min(maxTokens, 2000),
+            stream: false,
+          }),
+          30000,
+          'AI model inference'
+        ),
+        2,
+        1000,
+        'AI model call'
+      )
     ).catch((error) => {
       logger.error("AI model error", { error: String(error) });
       return {
@@ -1021,6 +1041,8 @@ async function handleHealthCheck(env: Env): Promise<Response> {
     const monitor = new HealthMonitor(env.ENVIRONMENT, env.ANALYTICS);
     const checks = HealthMonitor.createStandardChecks(env);
     checks.forEach(check => monitor.addCheck(check));
+    monitor.addCircuitBreaker('AI', aiCircuitBreaker);
+    monitor.addCircuitBreaker('Search', searchCircuitBreaker);
     
     const health = await monitor.runHealthChecks();
     
@@ -1047,8 +1069,7 @@ async function handleHealthCheck(env: Env): Promise<Response> {
 }
 
 export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    const url = new URL(request.url);
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {    const url = new URL(request.url);
     const origin = request.headers.get("origin") || "";
     const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
     
@@ -1272,57 +1293,43 @@ export default {
         if (url.pathname === "/api/customer/login" && request.method === "POST") {
           const body = await request.json() as { email: string; password?: string; totp_code?: string; backup_code?: string };
 
-          if (body.password) {
-            const result = await handleLogin(
-              env.DB,
-              { email: body.email, password: body.password, totp_code: body.totp_code, backup_code: body.backup_code },
-              clientIP,
-              request.headers.get('User-Agent')
-            );
-
-            const responseHeaders: HeadersInit = {
-              "Content-Type": "application/json",
-              ...corsHeaders,
-              ...SECURITY_HEADERS,
-            };
-
-            if (result.sessionCookie) {
-              (responseHeaders as Record<string, string>)['Set-Cookie'] = result.sessionCookie;
-            }
-
-            return new Response(
-              JSON.stringify(result.response),
-              {
-                status: result.response.success ? 200 : 401,
-                headers: responseHeaders,
-              }
-            );
-          }
-
-          // Legacy email-only login (deprecated - for backwards compatibility)
-          const customer = await getCustomerByEmail(env.DB, body.email);
-          if (!customer) {
+          if (!body.password) {
+            // Email-only (no password) login is no longer supported.
+            // All clients must supply a password.
             return new Response(
               JSON.stringify({
                 success: false,
-                message: "No account found with this email address"
+                message: "Password is required. Please use the password-based login or set a password first via /api/auth/set-password."
               }),
               {
-                status: 404,
+                status: 400,
                 headers: { "Content-Type": "application/json", ...corsHeaders, ...SECURITY_HEADERS },
               }
             );
           }
 
+          const result = await handleLogin(
+            env.DB,
+            { email: body.email, password: body.password, totp_code: body.totp_code, backup_code: body.backup_code },
+            clientIP,
+            request.headers.get('User-Agent')
+          );
+
+          const responseHeaders: HeadersInit = {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+            ...SECURITY_HEADERS,
+          };
+
+          if (result.sessionCookie) {
+            (responseHeaders as Record<string, string>)['Set-Cookie'] = result.sessionCookie;
+          }
+
           return new Response(
-            JSON.stringify({
-              success: true,
-              api_key: customer.api_key,
-              message: "Login successful"
-            }),
+            JSON.stringify(result.response),
             {
-              status: 200,
-              headers: { "Content-Type": "application/json", ...corsHeaders, ...SECURITY_HEADERS },
+              status: result.response.success ? 200 : 401,
+              headers: responseHeaders,
             }
           );
         }
@@ -1867,5 +1874,19 @@ export default {
         return response;
       }
     }
+  },
+
+  /**
+   * Scheduled handler — runs on a cron schedule defined in wrangler.jsonc.
+   * Cleans up expired/invalidated sessions from the D1 database.
+   */
+  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    ctx.waitUntil(
+      cleanupExpiredSessions(env.DB).then((deleted: number) => {
+        console.log(`[Scheduled] Cleaned up ${deleted} expired sessions`);
+      }).catch((err: unknown) => {
+        console.error('[Scheduled] Session cleanup failed:', err);
+      })
+    );
   },
 };

@@ -3,9 +3,6 @@
  * Handles password authentication, 2FA, password reset, and session management
  */
 
-// Cloudflare D1 Database type
-type D1Database = any;
-
 import {
   hashPassword,
   verifyPassword,

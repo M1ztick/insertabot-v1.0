@@ -54,7 +54,9 @@ export async function createSession(
 }
 
 /**
- * Validate and retrieve a session
+ * Validate and retrieve a session.
+ * The last_accessed_at timestamp is updated asynchronously (fire-and-forget)
+ * to avoid a synchronous second DB round-trip on every authenticated request.
  */
 export async function getSession(db: D1Database, sessionId: string): Promise<Session | null> {
 	return withDatabase(async () => {
@@ -78,11 +80,11 @@ export async function getSession(db: D1Database, sessionId: string): Promise<Ses
 			return null;
 		}
 
-		// Update last accessed time
-		await db
-			.prepare(`UPDATE sessions SET last_accessed_at = ? WHERE session_id = ?`)
+		// Fire-and-forget: update last_accessed_at without blocking the request
+		db.prepare(`UPDATE sessions SET last_accessed_at = ? WHERE session_id = ?`)
 			.bind(now, sessionId)
-			.run();
+			.run()
+			.catch((err: unknown) => console.error('Failed to update session last_accessed_at:', err));
 
 		return session;
 	}, 'getSession');

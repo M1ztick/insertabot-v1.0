@@ -45,14 +45,14 @@ export async function performWebSearch(
       `[Search] Performing search for: "${query.substring(0, 50)}..."`,
     );
 
-    // Call Tavily Search API
+    // Call Tavily Search API — API key sent via Authorization header, not in body
     const response = await fetch("https://api.tavily.com/search", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        api_key: apiKey,
         query: query.trim(),
         max_results: count,
         search_depth: "basic", // 'basic' or 'advanced'
@@ -195,10 +195,12 @@ export function shouldPerformSearch(message: string): boolean {
     lowerMessage.startsWith(word),
   );
 
-  // Questions about recent events likely need search
+  // Questions about the current year or the previous year likely need search
+  const currentYear = new Date().getFullYear();
+  const previousYear = currentYear - 1;
   if (
     isQuestion &&
-    (lowerMessage.includes("2024") || lowerMessage.includes("2025"))
+    (lowerMessage.includes(String(currentYear)) || lowerMessage.includes(String(previousYear)))
   ) {
     console.log(
       `[Search] Query needs search (recent year mentioned): "${message.substring(0, 50)}..."`,

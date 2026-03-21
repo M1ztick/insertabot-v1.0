@@ -80,11 +80,11 @@ export async function updateWidgetConfig(
 		const updates: string[] = [];
 		const values: any[] = [];
 
-		if (config.primary_color) {
+		if (config.primary_color !== undefined) {
 			updates.push('primary_color = ?');
 			values.push(config.primary_color);
 		}
-		if (config.bot_name) {
+		if (config.bot_name !== undefined) {
 			updates.push('bot_name = ?');
 			values.push(config.bot_name);
 		}
@@ -92,11 +92,11 @@ export async function updateWidgetConfig(
 			updates.push('bot_avatar_url = ?');
 			values.push(config.bot_avatar_url || null);
 		}
-		if (config.greeting_message) {
+		if (config.greeting_message !== undefined) {
 			updates.push('greeting_message = ?');
 			values.push(config.greeting_message);
 		}
-		if (config.system_prompt) {
+		if (config.system_prompt !== undefined) {
 			updates.push('system_prompt = ?');
 			values.push(config.system_prompt);
 		}
