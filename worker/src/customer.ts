@@ -36,10 +36,10 @@ export async function createCustomer(
 		const now = Math.floor(Date.now() / 1000);
 		const allowedDomain = siteUrl ? normalizeDomain(siteUrl) : null;
 
-		// Free tier: 5 messages/hour, 20 messages/day
+		// Free tier: unlimited messages/hour, 20 messages/day
 		await db.prepare(`
 			INSERT INTO customers (customer_id, email, company_name, api_key, plan_type, status, rate_limit_per_hour, rate_limit_per_day, created_at, updated_at)
-			VALUES (?, ?, ?, ?, 'free', 'active', 5, 20, ?, ?)
+			VALUES (?, ?, ?, ?, 'free', 'active', 999999, 20, ?, ?)
 		`).bind(customerId, email, companyName, apiKey, now, now).run();
 
 		await db.prepare(`

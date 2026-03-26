@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS customers (
     email_verification_sent_at INTEGER, -- Unix timestamp for rate limiting
 
     -- Rate limiting
-    rate_limit_per_hour INTEGER DEFAULT 5,
+    rate_limit_per_hour INTEGER DEFAULT 999999,
     rate_limit_per_day INTEGER DEFAULT 20,
 
     -- Feature flags
