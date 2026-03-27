@@ -124,6 +124,11 @@ export async function processWebhookEvent(
 		const data = event.data.object;
 
 		switch (type) {
+			// ✅ PRIMARY upgrade path — fires when checkout completes
+			// client_reference_id contains our customer_id
+			case 'checkout.session.completed':
+				return await handleCheckoutSessionCompleted(db, data);
+
 			case 'customer.subscription.created':
 			case 'customer.subscription.updated':
 				return await handleSubscriptionUpdate(db, data);
@@ -153,7 +158,57 @@ export async function processWebhookEvent(
 }
 
 /**
+ * Handle checkout.session.completed — the primary Pro upgrade trigger.
+ * This event carries client_reference_id = our customer_id, which
+ * subscription events do NOT. Always handle upgrades here, not in
+ * handleSubscriptionUpdate.
+ */
+async function handleCheckoutSessionCompleted(db: D1Database, session: any): Promise<boolean> {
+	try {
+		const customerId = session.client_reference_id;
+		const stripeCustomerId = session.customer;
+		const subscriptionId = session.subscription;
+
+		if (!customerId) {
+			console.error('checkout.session.completed: no client_reference_id on session');
+			return false;
+		}
+
+		const result = await db
+			.prepare(
+				`UPDATE customers
+				 SET stripe_customer_id  = ?,
+				     subscription_id     = ?,
+				     subscription_status = 'active',
+				     plan_type           = 'pro',
+				     rate_limit_per_hour = 50,
+				     rate_limit_per_day  = 500,
+				     updated_at          = ?
+				 WHERE customer_id = ?`
+			)
+			.bind(
+				stripeCustomerId,
+				subscriptionId,
+				Math.floor(Date.now() / 1000),
+				customerId
+			)
+			.run();
+
+		const sanitized = customerId.replace(/[\r\n]/g, ' ').substring(0, 50);
+		console.log(`Pro upgrade complete for customer_id: ${sanitized}`);
+		return true;
+	} catch (error) {
+		console.error('Error handling checkout.session.completed:', error);
+		return false;
+	}
+}
+
+/**
  * Handle subscription creation/update
+ * NOTE: subscription events do NOT carry client_reference_id.
+ * This handler is retained for future use (e.g. subscription renewals,
+ * status changes) but will only work if customer_id is in metadata,
+ * which requires programmatic checkout with metadata set explicitly.
  */
 async function handleSubscriptionUpdate(db: D1Database, subscription: any): Promise<boolean> {
 	try {
