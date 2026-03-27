@@ -3,7 +3,7 @@ Contributors: m1styk
 Tags: chatbot, ai, chat, support, customer service
 Requires at least: 5.9
 Tested up to: 6.9
-Stable tag: 1.0.8
+Stable tag: 1.0.9
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -205,6 +205,18 @@ Visit your [dashboard](https://insertabot.io/dashboard) or click the upgrade lin
 
 == Changelog ==
 
+= 1.0.9 =
+* Security: Removed legacy email-only login path that was returning the API key in the response
+* Security: Added AI and Search circuit breakers to the chat handler and web search — circuit state is now exposed via /health
+* Security: Replaced hard-coded year list with a dynamic current/previous year check in the search relevance filter
+* Security: Removed overly broad SQL-injection heuristic that was triggering false positives
+* Security: Adjusted response coherence validation to only reject the literal strings "undefined" or "null"
+* Security: Added Content-Security-Policy header to all Worker responses
+* Fix: updateWidgetConfig now uses strict !== undefined checks — falsy-but-valid values (e.g. 0, empty string) are no longer silently discarded
+* Fix: Removed local any type aliases; Cloudflare Workers bindings (D1Database, KVNamespace, Ai) now use their correct platform types
+* Fix: AI model message mapping corrected for multimodal content shapes
+* Fix: bge-base-en-v1.5 embedding response cast to its correct output shape
+
 = 1.0.8 =
 * Fix: "Upgrade to Pro" button in plugin settings now routes directly to the Insertabot dashboard — upgrade is one click away instead of buried behind the landing page
 * Fix: "Upgrade to Pro" on the public pricing page now routes to login instead of signup — existing users no longer hit a dead end
@@ -249,6 +261,9 @@ Visit your [dashboard](https://insertabot.io/dashboard) or click the upgrade lin
 * Customizable appearance
 
 == Upgrade Notice ==
+
+= 1.0.9 =
+Security and type-safety hardening release. Removes a legacy login path that exposed API keys, adds circuit breakers for AI and search, and tightens response validation. Upgrade recommended for all users.
 
 = 1.0.8 =
 Fixes the upgrade flow — the "Upgrade to Pro" button in plugin settings now goes directly to your dashboard. Also corrects several backend config issues. Recommended for all users.

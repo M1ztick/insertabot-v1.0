@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Insertabot - AI Chatbot Solution
  * Plugin URI: https://insertabot.io
- * Description: Add a customizable AI chatbot to your WordPress site. Real-time web search, unlimited conversations. Get your free API key at insertabot.io
- * Version: 1.0.8
+ * Description: Add a free AI chatbot to your WordPress site — no coding needed! Up to 20 free AI conversations per day. Real-time web search. Set up in minutes at insertabot.io
+ * Version: 1.0.9
  * Author: Mistyk Media
  * Author URI: https://mistykmedia.com
  * License: GPL v2 or later
@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('INSERTABOT_VERSION', '1.0.8');
+define('INSERTABOT_VERSION', '1.0.9');
 define('INSERTABOT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('INSERTABOT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('INSERTABOT_API_URL', 'https://insertabot.io');

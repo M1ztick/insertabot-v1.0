@@ -524,8 +524,8 @@ export function getLandingHTML(origin: string): string {
 <section class="hero">
   <img src="/logo.png" alt="Insertabot logo" />
   <h1>Insertabot</h1>
-  <h2>Insert an AI chatbot on your website in a flash</h2>
-  <h3>Traveling at the speed of innovation</h3>
+  <h2>Add an AI chatbot to your site — it's free to start</h2>
+  <h3>Up to 20 free AI conversations every day. No credit card. No coding required.</h3>
 
   <div class="hero-actions">
     <a href="/signup" class="btn btn-primary">Get Started Free</a>
@@ -543,36 +543,36 @@ export function getLandingHTML(origin: string): string {
 </section>
 
 <main>
-  <h2 class="features-heading">Product Features</h2>
+  <h2 class="features-heading">Everything You Get — Free to Start</h2>
   <section class="features">
     <article class="feature">
-      <h3>⚡ Instant Setup</h3>
-      <p>Drop in one script tag and launch your AI chatbot instantly.</p>
+      <h3>⚡ Up and Running in Minutes</h3>
+      <p>WordPress? Install the plugin, paste your API key, flip a switch. Any other site? One script tag and you're live.</p>
     </article>
 
     <article class="feature">
-      <h3>🎨 Fully Customizable</h3>
-      <p>Brand colors, position, prompts, avatars — fully white‑label.</p>
+      <h3>🎨 Make It Yours</h3>
+      <p>Change the colors, name your bot, set a greeting — no designer needed. It'll look like it was built just for your site.</p>
     </article>
 
     <article class="feature">
-      <h3>🧠 Smart AI</h3>
-      <p>Powered by Tavily for real‑time web search and fresh answers.</p>
+      <h3>🧠 Always Up-to-Date Answers</h3>
+      <p>Unlike other AI tools, Insertabot searches the web in real time so your visitors get current answers — not outdated guesses.</p>
     </article>
 
     <article class="feature">
-      <h3>🔒 Secure</h3>
-      <p>API keys, rate limiting, and CORS protection included.</p>
+      <h3>🔒 Safe &amp; Secure</h3>
+      <p>Your chatbot is protected out of the box. Rate limiting, origin protection, and encrypted keys — all handled for you.</p>
     </article>
 
     <article class="feature">
-      <h3>🛡️ Privacy Focused</h3>
-      <p>No tracking, no third-party analytics. Your data stays yours.</p>
+      <h3>🛡️ Your Data Stays Yours</h3>
+      <p>We don't track your visitors, sell data, or run third-party ads. Privacy is built in, not bolted on.</p>
     </article>
 
     <article class="feature">
-      <h3>📚 RAG Support</h3>
-      <p>Use Vectorize for knowledge‑aware AI responses.</p>
+      <h3>📚 Teach Your Bot</h3>
+      <p>Upload your FAQs, product info, or any text and your chatbot will use it to answer questions about your specific business.</p>
     </article>
   </section>
 </main>
@@ -583,35 +583,34 @@ export function getLandingHTML(origin: string): string {
 
   <div class="pricing-cards">
 
-    <div class="pricing-card">
+    <div class="pricing-card featured">
+      <div class="pricing-badge">Start Here — It's Free</div>
       <p class="plan-name">Free</p>
       <p class="plan-price">$0 <span>/ month</span></p>
-      <p class="plan-desc">Perfect for getting started and trying it out.</p>
+      <p class="plan-desc">Start today — no credit card, no tech skills needed. Real AI on your real site.</p>
       <ul class="plan-features">
-        <li>20 chatbot messages per day</li>
+        <li>20 AI conversations per day</li>
         <li>Fully customizable widget</li>
-        <li>Secure API key authentication</li>
+        <li>Real-time web search included</li>
         <li>WordPress plugin included</li>
-        <li class="muted">Priority support</li>
-        <li class="muted">500 messages per day</li>
+        <li>No credit card required</li>
       </ul>
-      <a href="/signup" class="plan-cta outline">Get Started Free</a>
+      <a href="/signup" class="plan-cta primary">Get Started Free →</a>
     </div>
 
-    <div class="pricing-card featured">
-      <div class="pricing-badge">Most Popular</div>
+    <div class="pricing-card">
       <p class="plan-name">Pro</p>
       <p class="plan-price">$9.99 <span>/ month</span></p>
-      <p class="plan-desc">For sites that need more power and real support.</p>
+      <p class="plan-desc">For growing sites that need more conversations and priority help.</p>
       <ul class="plan-features">
-        <li>500 chatbot messages per day</li>
+        <li>500 AI conversations per day</li>
         <li>Fully customizable widget</li>
-        <li>Secure API key authentication</li>
+        <li>Real-time web search included</li>
         <li>WordPress plugin included</li>
         <li>Priority support</li>
         <li>Cancel anytime</li>
       </ul>
-      <a href="/login" class="plan-cta primary">Upgrade to Pro →</a>
+      <a href="/login" class="plan-cta outline">Upgrade to Pro →</a>
     </div>
 
   </div>
@@ -630,8 +629,8 @@ export function getLandingHTML(origin: string): string {
 </section>
 
 <section class="demo">
-  <h2>See It In Action</h2>
-  <p>Click the chat bubble in the bottom‑right corner to try the live demo.</p>
+  <h2>Try It Right Now — It's Live Below</h2>
+  <p>See that chat bubble in the corner? That's Insertabot. Click it, say hi, and ask it anything. It searches the web in real time.</p>
 </section>
 
 <footer>
