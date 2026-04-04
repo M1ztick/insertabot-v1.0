@@ -110,7 +110,7 @@ See the `docs/` folder for detailed documentation:
 - **Runtime**: Cloudflare Workers
 - **Database**: D1 (SQLite)
 - **Storage**: KV (rate limiting)
-- **AI**: Workers AI (Llama 3.1, Vision models)
+- **AI**: Workers AI (Llama 3.3 Llama 70B)
 - **Search**: Tavily API
 - **Payments**: Stripe
 - **Vector DB**: Vectorize (RAG)
