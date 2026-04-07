@@ -1,6 +1,6 @@
 // insertabot-api — Cloudflare Workers Configuration
 // Migrated from wrangler.toml to wrangler.jsonc
-// Last updated: 2026-02-23
+// Last updated: 2026-04-07
 {
   "name": "insertabot-api",
   "main": "src/index.ts",
@@ -18,11 +18,17 @@
     "mode": "smart"
   },
 
-  // Observability — 10% sampling in production to manage costs
-  // while still capturing meaningful signal
+  // Observability — logs at 100% sampling, traces enabled
   "observability": {
-    "enabled": true,
-    "head_sampling_rate": 0.1
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true,
+      "head_sampling_rate": 1
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 1
+    }
   },
 
   // Disable workers.dev subdomain and preview URLs — production uses custom domains only
@@ -90,7 +96,7 @@
   "triggers": {
     "crons": ["0 3 * * *"]
   },
-  
+
   // Environment variables
   // NOTE: Do NOT add secrets here. Manage secrets via:
   //   wrangler secret put STRIPE_SECRET_KEY
