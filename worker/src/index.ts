@@ -49,6 +49,9 @@ import { getSignupHTML } from "./html/signup";
 import { getLoginHTML } from "./html/login";
 import { getResetPasswordHTML } from "./html/reset-password";
 import { getDashboardHTML } from "./html/dashboard";
+import { getVsChatbaseHTML } from "./html/vs-chatbase";
+import { getVsTidioHTML } from "./html/vs-tidio";
+import { getVsHubspotHTML } from "./html/vs-hubspot";
 import { HealthMonitor } from "./health";
 import {
   performWebSearch,
@@ -1153,6 +1156,45 @@ export default {
 
         if (url.pathname === "/" && request.method === "GET") {
           const html = getLandingHTML(url.origin);
+          return new Response(html, {
+            status: 200,
+            headers: {
+              "Content-Type": "text/html; charset=utf-8",
+              "Cache-Control": "public, max-age=3600",
+              ...corsHeaders,
+              ...SECURITY_HEADERS,
+            },
+          });
+        }
+
+        if (url.pathname === "/vs-chatbase" && request.method === "GET") {
+          const html = getVsChatbaseHTML(url.origin);
+          return new Response(html, {
+            status: 200,
+            headers: {
+              "Content-Type": "text/html; charset=utf-8",
+              "Cache-Control": "public, max-age=3600",
+              ...corsHeaders,
+              ...SECURITY_HEADERS,
+            },
+          });
+        }
+
+        if (url.pathname === "/vs-tidio" && request.method === "GET") {
+          const html = getVsTidioHTML(url.origin);
+          return new Response(html, {
+            status: 200,
+            headers: {
+              "Content-Type": "text/html; charset=utf-8",
+              "Cache-Control": "public, max-age=3600",
+              ...corsHeaders,
+              ...SECURITY_HEADERS,
+            },
+          });
+        }
+
+        if (url.pathname === "/vs-hubspot" && request.method === "GET") {
+          const html = getVsHubspotHTML(url.origin);
           return new Response(html, {
             status: 200,
             headers: {
