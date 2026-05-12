@@ -494,10 +494,8 @@ export function getLandingHTML(origin: string): string {
     /* ---------- WORDPRESS BANNER ---------- */
 
     .wp-banner {
-      margin: 0 20px 90px;
       max-width: 1160px;
-      margin-left: auto;
-      margin-right: auto;
+      margin: 48px auto 80px;
       border-radius: 24px;
       padding: 60px 56px;
       position: relative;
@@ -700,6 +698,31 @@ export function getLandingHTML(origin: string): string {
   </div>
 </section>
 
+<!-- WordPress Plugin Banner -->
+<section class="wp-banner" id="wordpress">
+  <div class="wp-banner-icon" aria-hidden="true">🔌</div>
+  <div class="wp-banner-body">
+    <div class="wp-banner-eyebrow">
+      <span></span>
+      WordPress Plugin Available
+    </div>
+    <h2>Running WordPress?<br><em>You're one click away.</em></h2>
+    <p>Install the free Insertabot plugin directly from the WordPress plugin directory — no code, no fuss. Activate it, drop in your API key, and your AI chatbot is live on every page. It really is that simple.</p>
+    <div class="wp-banner-actions">
+      <a
+        href="https://wordpress.org/plugins/insertabot-ai-chatbot-solution"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="wp-btn-primary"
+      >
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zM3.6 12c0-1.128.24-2.203.666-3.178L7.8 19.63A8.412 8.412 0 0 1 3.6 12zm8.4 8.4a8.46 8.46 0 0 1-2.406-.348l2.556-7.422 2.616 7.17a.75.75 0 0 0 .057.111A8.43 8.43 0 0 1 12 20.4zm1.158-12.558c.504-.027.957-.081.957-.081.45-.054.396-.714-.054-.687 0 0-1.353.108-2.226.108-.819 0-2.2-.108-2.2-.108-.45-.027-.504.66-.054.687 0 0 .426.054.876.081l1.302 3.564-1.83 5.484-3.042-9.048c.504-.027.957-.081.957-.081.45-.054.396-.714-.054-.687 0 0-1.353.108-2.226.108a12.51 12.51 0 0 1-.3-.006A8.4 8.4 0 0 1 12 3.6c2.196 0 4.2.84 5.706 2.214a.75.75 0 0 0-.054.018c-.45.135-.768.558-.768 1.044 0 .486.279.9.576 1.386.225.387.486.882.486 1.602 0 .495-.189 1.071-.45 1.872l-.588 1.968-2.13-6.342zm2.16 11.952-.012-.021 2.61-7.545c.486-1.215.648-2.187.648-3.051 0-.312-.021-.603-.057-.876A8.4 8.4 0 0 1 20.4 12a8.412 8.412 0 0 1-5.082 7.794z"/></svg>
+        Install Free Plugin
+      </a>
+      <span class="wp-badge">100% free — no account needed to install</span>
+    </div>
+  </div>
+</section>
+
 <section class="mission">
   <h2>Who We Are</h2>
   <div class="mission-quote">
@@ -792,31 +815,6 @@ export function getLandingHTML(origin: string): string {
       title="Stripe Climate contribution badge"
       loading="lazy">
     </iframe>
-  </div>
-</section>
-
-<!-- WordPress Plugin Banner -->
-<section class="wp-banner" id="wordpress">
-  <div class="wp-banner-icon" aria-hidden="true">🔌</div>
-  <div class="wp-banner-body">
-    <div class="wp-banner-eyebrow">
-      <span></span>
-      WordPress Plugin Available
-    </div>
-    <h2>Running WordPress?<br><em>You're one click away.</em></h2>
-    <p>Install the free Insertabot plugin directly from the WordPress plugin directory — no code, no fuss. Activate it, drop in your API key, and your AI chatbot is live on every page. It really is that simple.</p>
-    <div class="wp-banner-actions">
-      <a
-        href="https://wordpress.org/plugins/insertabot-ai-chatbot-solution"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="wp-btn-primary"
-      >
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zM3.6 12c0-1.128.24-2.203.666-3.178L7.8 19.63A8.412 8.412 0 0 1 3.6 12zm8.4 8.4a8.46 8.46 0 0 1-2.406-.348l2.556-7.422 2.616 7.17a.75.75 0 0 0 .057.111A8.43 8.43 0 0 1 12 20.4zm1.158-12.558c.504-.027.957-.081.957-.081.45-.054.396-.714-.054-.687 0 0-1.353.108-2.226.108-.819 0-2.2-.108-2.2-.108-.45-.027-.504.66-.054.687 0 0 .426.054.876.081l1.302 3.564-1.83 5.484-3.042-9.048c.504-.027.957-.081.957-.081.45-.054.396-.714-.054-.687 0 0-1.353.108-2.226.108a12.51 12.51 0 0 1-.3-.006A8.4 8.4 0 0 1 12 3.6c2.196 0 4.2.84 5.706 2.214a.75.75 0 0 0-.054.018c-.45.135-.768.558-.768 1.044 0 .486.279.9.576 1.386.225.387.486.882.486 1.602 0 .495-.189 1.071-.45 1.872l-.588 1.968-2.13-6.342zm2.16 11.952-.012-.021 2.61-7.545c.486-1.215.648-2.187.648-3.051 0-.312-.021-.603-.057-.876A8.4 8.4 0 0 1 20.4 12a8.412 8.412 0 0 1-5.082 7.794z"/></svg>
-        Install Free Plugin
-      </a>
-      <span class="wp-badge">100% free — no account needed to install</span>
-    </div>
   </div>
 </section>
 
