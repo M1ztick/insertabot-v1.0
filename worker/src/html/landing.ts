@@ -491,6 +491,173 @@ export function getLandingHTML(origin: string): string {
       color: var(--muted);
     }
 
+    /* ---------- WORDPRESS BANNER ---------- */
+
+    .wp-banner {
+      margin: 0 20px 90px;
+      max-width: 1160px;
+      margin-left: auto;
+      margin-right: auto;
+      border-radius: 24px;
+      padding: 60px 56px;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, rgba(0,245,255,0.07) 0%, rgba(255,0,255,0.07) 100%);
+      border: 1px solid rgba(0,245,255,0.25);
+      display: flex;
+      align-items: center;
+      gap: 48px;
+      flex-wrap: wrap;
+    }
+
+    .wp-banner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at top left, rgba(0,245,255,0.1), transparent 60%),
+                  radial-gradient(ellipse at bottom right, rgba(255,0,255,0.08), transparent 60%);
+      pointer-events: none;
+    }
+
+    .wp-banner-icon {
+      font-size: 5.5rem;
+      line-height: 1;
+      flex-shrink: 0;
+      filter: drop-shadow(0 0 24px rgba(0,245,255,0.4));
+      animation: wp-float 4s ease-in-out infinite;
+    }
+
+    @keyframes wp-float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-8px); }
+    }
+
+    .wp-banner-body {
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .wp-banner-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0,245,255,0.1);
+      border: 1px solid rgba(0,245,255,0.3);
+      border-radius: 99px;
+      padding: 5px 14px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 18px;
+    }
+
+    .wp-banner-eyebrow span {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--cyan);
+      animation: wp-pulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes wp-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    .wp-banner h2 {
+      font-size: clamp(1.7rem, 3.5vw, 2.4rem);
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 14px;
+      color: var(--text);
+    }
+
+    .wp-banner h2 em {
+      font-style: normal;
+      background: linear-gradient(135deg, var(--cyan), var(--magenta));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .wp-banner p {
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.7;
+      margin-bottom: 32px;
+      max-width: 560px;
+    }
+
+    .wp-banner-actions {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .wp-btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 32px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 1rem;
+      background: linear-gradient(135deg, var(--cyan), var(--magenta));
+      color: #fff;
+      box-shadow: 0 0 24px rgba(0,245,255,0.35);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .wp-btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0 40px rgba(0,245,255,0.55);
+    }
+
+    .wp-btn-primary svg {
+      width: 18px;
+      height: 18px;
+      fill: #fff;
+      flex-shrink: 0;
+    }
+
+    .wp-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    .wp-badge::before {
+      content: '✓';
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(0,245,255,0.12);
+      color: var(--cyan);
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 640px) {
+      .wp-banner {
+        padding: 40px 28px;
+        flex-direction: column;
+        gap: 24px;
+        text-align: center;
+      }
+      .wp-banner p { max-width: 100%; }
+      .wp-banner-actions { justify-content: center; }
+    }
+
     /* ---------- FOOTER ---------- */
 
     footer {
@@ -625,6 +792,31 @@ export function getLandingHTML(origin: string): string {
       title="Stripe Climate contribution badge"
       loading="lazy">
     </iframe>
+  </div>
+</section>
+
+<!-- WordPress Plugin Banner -->
+<section class="wp-banner" id="wordpress">
+  <div class="wp-banner-icon" aria-hidden="true">🔌</div>
+  <div class="wp-banner-body">
+    <div class="wp-banner-eyebrow">
+      <span></span>
+      WordPress Plugin Available
+    </div>
+    <h2>Running WordPress?<br><em>You're one click away.</em></h2>
+    <p>Install the free Insertabot plugin directly from the WordPress plugin directory — no code, no fuss. Activate it, drop in your API key, and your AI chatbot is live on every page. It really is that simple.</p>
+    <div class="wp-banner-actions">
+      <a
+        href="https://wordpress.org/plugins/insertabot-ai-chatbot-solution"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="wp-btn-primary"
+      >
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zM3.6 12c0-1.128.24-2.203.666-3.178L7.8 19.63A8.412 8.412 0 0 1 3.6 12zm8.4 8.4a8.46 8.46 0 0 1-2.406-.348l2.556-7.422 2.616 7.17a.75.75 0 0 0 .057.111A8.43 8.43 0 0 1 12 20.4zm1.158-12.558c.504-.027.957-.081.957-.081.45-.054.396-.714-.054-.687 0 0-1.353.108-2.226.108-.819 0-2.2-.108-2.2-.108-.45-.027-.504.66-.054.687 0 0 .426.054.876.081l1.302 3.564-1.83 5.484-3.042-9.048c.504-.027.957-.081.957-.081.45-.054.396-.714-.054-.687 0 0-1.353.108-2.226.108a12.51 12.51 0 0 1-.3-.006A8.4 8.4 0 0 1 12 3.6c2.196 0 4.2.84 5.706 2.214a.75.75 0 0 0-.054.018c-.45.135-.768.558-.768 1.044 0 .486.279.9.576 1.386.225.387.486.882.486 1.602 0 .495-.189 1.071-.45 1.872l-.588 1.968-2.13-6.342zm2.16 11.952-.012-.021 2.61-7.545c.486-1.215.648-2.187.648-3.051 0-.312-.021-.603-.057-.876A8.4 8.4 0 0 1 20.4 12a8.412 8.412 0 0 1-5.082 7.794z"/></svg>
+        Install Free Plugin
+      </a>
+      <span class="wp-badge">100% free — no account needed to install</span>
+    </div>
   </div>
 </section>
 
