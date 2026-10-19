@@ -138,9 +138,10 @@ export class ErrorHandler {
     if (this.analytics) {
       try {
         this.analytics.writeDataPoint({
-          blobs: [appError.code, appError.message, this.environment],
+          blobs: [appError.code, appError.message, this.environment, 'error'],
           doubles: [appError.statusCode, timestamp],
-          indexes: [appError.code, 'error']
+          // Analytics Engine allows at most one index per data point
+          indexes: [appError.code]
         });
       } catch (analyticsError) {
         console.error('Failed to log error to analytics:', analyticsError);
