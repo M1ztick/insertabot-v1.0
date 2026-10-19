@@ -405,7 +405,8 @@ export class StructuredLogger {
         this.analytics.writeDataPoint({
           blobs: [level, this.service, sanitizedMessage],
           doubles: [Date.now()],
-          indexes: [level, this.service]
+          // Analytics Engine allows at most one index per data point
+          indexes: [this.service]
         });
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message.replace(/[\r\n]/g, ' ').substring(0, 200) : 'Unknown error';
