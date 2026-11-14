@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Insertabot - AI-powered chatbot widget for websites",
   "scripts": {
+    "build": "echo 'Build handled by wrangler deploy — no separate build step needed'",
     "dev": "node scripts/dev-server.js",
     "dev:port": "node scripts/dev-server.js --port",
     "dev:worker": "wrangler dev --config worker/wrangler.jsonc --env=\"\"",
