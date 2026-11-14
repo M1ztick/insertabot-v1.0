@@ -92,13 +92,13 @@ CORS_ORIGINS = "*"
 curl -H "Origin: https://example.com" \
      -H "X-API-Key: your_api_key" \
      -X OPTIONS \
-     https://api.insertabot.io/v1/chat/completions
+     https://insertabot.io/v1/chat/completions
 
 # Should fail with 403
 curl -H "Origin: https://unauthorized.com" \
      -H "X-API-Key: your_api_key" \
      -X OPTIONS \
-     https://api.insertabot.io/v1/chat/completions
+     https://insertabot.io/v1/chat/completions
 ```
 
 ### Update Allowed Domains
@@ -125,6 +125,20 @@ WHERE customer_id = 'cust_123';
 - Check the `allowed_domains` field in `widget_configs` table
 - Verify the origin header matches exactly (including protocol and port)
 - Ensure wildcards are formatted correctly (`*.domain.com`, not `*domain.com`)
+
+### Preflight returns 403 with `cf-mitigated: challenge`
+
+- The request was stopped by a Cloudflare security rule on the zone before it reached the Worker. A preflight (`OPTIONS`) cannot solve a challenge, so the browser reports a CORS error for every cross-origin widget call.
+- Find the rule in the Cloudflare dashboard under Security → Events (filter by method `OPTIONS`).
+- Exclude `OPTIONS` from that rule, or add a Skip rule above it with the expression `(http.request.method eq "OPTIONS")`.
+- Verify (expect `204` and an `Access-Control-Allow-Origin` header):
+
+```bash
+curl -s -o /dev/null -D - -X OPTIONS https://insertabot.io/v1/chat/completions \
+     -H "Origin: https://example.com" \
+     -H "Access-Control-Request-Method: POST" \
+     -H "Access-Control-Request-Headers: content-type,x-api-key"
+```
 
 ### CORS headers not appearing
 
