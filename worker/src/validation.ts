@@ -111,7 +111,7 @@ export async function validateRequest<T>(
     const result = schema.safeParse(body);
     if (!result.success) {
       // Extract first error message
-      const firstError = result.error.errors[0];
+      const firstError = result.error.issues[0];
       return {
         success: false,
         error: `${firstError.path.join(".")}: ${firstError.message}`,

@@ -24,13 +24,18 @@
   "author": "Mistyk Media",
   "license": "GNU-v2",
   "dependencies": {
-    "zod": "^3.22.3"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260103.0",
+    "@cloudflare/workers-types": "^5.20261114.1",
     "@secretlint/secretlint-rule-preset-recommend": "^11.2.5",
     "husky": "^8.0.0",
     "secretlint": "^11.2.5",
     "wrangler": "^4.67.0"
+  },
+  "allowScripts": {
+    "sharp@0.34.5": true,
+    "esbuild@0.28.2": true,
+    "workerd@1.20261113.1": true
   }
 }

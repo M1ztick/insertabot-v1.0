@@ -1101,7 +1101,10 @@ export default {
     
     if (publicRoutes.includes(url.pathname)) {
       const globalOrigins = env.CORS_ORIGINS.split(',').map(o => o.trim());
-      const allowed = globalOrigins.includes('*') || globalOrigins.includes(origin);
+      // Widget token exchange must accept requests from any customer domain.
+      // Security is provided by HMAC verification, not CORS. No credentials are sent.
+      const isWidgetExchange = url.pathname === '/v1/widget-token/exchange';
+      const allowed = isWidgetExchange || globalOrigins.includes('*') || globalOrigins.includes(origin);
       const corsHeaders = createCorsHeaders(origin, allowed);
       
       if (url.pathname !== '/favicon.ico') {
