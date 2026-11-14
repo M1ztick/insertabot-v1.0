@@ -172,7 +172,7 @@ INSERT INTO customers (
 <script
   src="https://insertabot.io/widget.js"
   data-api-key="YOUR_API_KEY_HERE"
-  data-api-base="https://api.insertabot.io"
+  data-api-base="https://insertabot.io"
 ></script>
 ```
 
@@ -205,7 +205,7 @@ npm install
 npm run deploy
 
 # 3. Verify deployment
-curl https://api.insertabot.io/health
+curl https://insertabot.io/health
 ```
 
 ---
@@ -215,7 +215,7 @@ curl https://api.insertabot.io/health
 ### Test 1: Check API Health
 
 ```bash
-curl https://api.insertabot.io/health
+curl https://insertabot.io/health
 ```
 
 **Expected response:**
@@ -234,7 +234,7 @@ curl https://api.insertabot.io/health
 
 ```bash
 curl -H "X-API-Key: YOUR_API_KEY" \
-     https://api.insertabot.io/v1/widget/config
+     https://insertabot.io/v1/widget/config
 ```
 
 **Expected response (after this fix):**
@@ -259,7 +259,7 @@ curl -H "X-API-Key: YOUR_API_KEY" \
 curl -H "Origin: https://insertabot.io" \
      -H "X-API-Key: YOUR_API_KEY" \
      -v \
-     https://api.insertabot.io/v1/widget/config
+     https://insertabot.io/v1/widget/config
 ```
 
 **Look for this header in response:**
@@ -274,7 +274,7 @@ There is a convenience script to run a preflight check plus simple GET/POST chec
 ```bash
 # Make it executable first: chmod +x scripts/test-cors.sh
 # Usage: scripts/test-cors.sh [WORKER_URL] [ORIGIN] [API_KEY]
-scripts/test-cors.sh https://api.insertabot.io https://your-site.example ib_sk_...
+scripts/test-cors.sh https://insertabot.io https://your-site.example ib_sk_...
 ```
 
 The script performs:
@@ -332,7 +332,7 @@ If any step fails, the script exits non-zero and prints the headers/body to help
 **Never commit real API keys or secrets to the repository.** Use these recommended patterns for local testing and worker secrets:
 
 - **Set a local environment variable (temporary):**
-  - DEMO_API_KEY=ib_sk_xxx ./scripts/test-cors.sh https://api.insertabot.io https://your-site.example $DEMO_API_KEY
+  - DEMO_API_KEY=ib_sk_xxx ./scripts/test-cors.sh https://insertabot.io https://your-site.example $DEMO_API_KEY
   - Or interactively: `read -s DEMO_API_KEY; ./scripts/test-cors.sh <worker> <origin> $DEMO_API_KEY; unset DEMO_API_KEY`
 - **Store secrets for your Worker runtime:**
   - `wrangler secret put DEMO_API_KEY` (enter key when prompted)

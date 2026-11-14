@@ -248,7 +248,7 @@ curl -H "X-API-Key: ib_sk_demo_12345678901234567890123456789012" \
 ### Embed Widget on Website
 
 ```html
-<script src="https://cdn.insertabot.io/widget.js"
+<script src="https://insertabot.io/widget.js"
         data-api-key="ib_sk_customer_key_here"></script>
 ```
 
