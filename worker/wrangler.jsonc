@@ -86,6 +86,25 @@
     }
   ],
 
+  // Workers Rate Limiting — per-IP limits for unauthenticated routes.
+  // Counters live at the edge, so these add no KV writes. `period` must be
+  // 10 or 60 seconds. `namespace_id` is any integer string, unique per
+  // account: change these if another Worker already uses 1001 or 1002.
+  "ratelimits": [
+    {
+      // Widget token exchange and other public API routes
+      "name": "PUBLIC_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 60, "period": 60 }
+    },
+    {
+      // Signup, login, password reset, email verification
+      "name": "AUTH_RATE_LIMITER",
+      "namespace_id": "1002",
+      "simple": { "limit": 10, "period": 60 }
+    }
+  ],
+
   // Workers AI binding
   "ai": {
     "binding": "AI"

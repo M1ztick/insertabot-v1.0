@@ -68,7 +68,7 @@ export class AuthenticationError extends AppError {
 }
 
 export class RateLimitError extends AppError {
-  constructor(retryAfter: number, limitType: 'hourly' | 'daily') {
+  constructor(retryAfter: number, limitType: 'minute' | 'hourly' | 'daily') {
     super(ErrorCode.RATE_LIMIT_EXCEEDED, 'Rate limit exceeded', 429, { retryAfter, limitType });
     this.name = 'RateLimitError';
   }
