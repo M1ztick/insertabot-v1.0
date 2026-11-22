@@ -86,7 +86,11 @@ const searchCircuitBreaker = createSearchCircuitBreaker();
 export interface Env {
   DB: D1Database;
   VECTORIZE: VectorizeIndex;
-  RATE_LIMITER: KVNamespace;
+  RATE_LIMITER: KVNamespace; // customer quotas, widget nonces and session tokens
+  // Workers Rate Limiting bindings for unauthenticated routes (no KV writes).
+  // Optional so local dev and tests without the bindings still run.
+  PUBLIC_RATE_LIMITER?: RateLimit;
+  AUTH_RATE_LIMITER?: RateLimit;
   ANALYTICS: AnalyticsEngineDataset;
   AI: Ai; // Cloudflare Workers AI binding
   ENVIRONMENT: string; // 'development' | 'production'
@@ -501,24 +505,65 @@ function validateCorsConfig(env: Env): void {
   }
 }
 
+// Public routes that serve static or cacheable content. They are not rate
+// limited: limiting them protects nothing and only adds latency.
+const UNLIMITED_PUBLIC_ROUTES = new Set([
+  '/', '/favicon.ico', '/logo.png', '/widget.js', '/health', '/playground',
+  '/dashboard', '/signup', '/login', '/checkout-success', '/verify-email',
+  '/reset-password', '/vs-chatbase', '/vs-tidio', '/vs-hubspot',
+  // Stripe authenticates itself with a signature; limiting it risks dropping
+  // webhook deliveries during bursts.
+  '/v1/stripe/webhook',
+]);
+
+// Credential-handling routes get the stricter limiter (brute-force protection).
+const AUTH_LIMITED_ROUTES = new Set([
+  '/api/customer/create', '/api/customer/login', '/api/auth/set-password',
+  '/api/auth/password-reset-request', '/api/auth/password-reset',
+  '/api/auth/email/send-verification', '/api/auth/email/verify',
+  '/api/auth/email/resend',
+]);
+
+/**
+ * Per-IP rate limit for unauthenticated routes, using the Workers Rate
+ * Limiting bindings (in-memory counters at the edge, no KV writes).
+ *
+ * The previous KV-based version wrote one key per path+IP on every request.
+ * KV allows only one write per second per key, so a CORS preflight followed
+ * immediately by its POST could fail the second write. That error escaped the
+ * request handler, the Worker crashed (1101), and the browser reported it as
+ * a CORS error because Cloudflare's error page has no CORS headers.
+ *
+ * This fails open: if the limiter is missing or errors, the request proceeds.
+ */
 async function checkPublicRateLimit(
-  kv: KVNamespace,
+  env: Env,
+  request: Request,
   clientIP: string,
   pathname: string
 ): Promise<void> {
-  const key = `public:${pathname}:${clientIP}`;
-  
+  // Preflights carry no body or credentials; the real request is limited.
+  if (request.method === 'OPTIONS') return;
+  if (UNLIMITED_PUBLIC_ROUTES.has(pathname)) return;
+
+  const limiter = AUTH_LIMITED_ROUTES.has(pathname)
+    ? env.AUTH_RATE_LIMITER
+    : env.PUBLIC_RATE_LIMITER;
+  if (!limiter) return;
+
+  let outcome: RateLimitOutcome;
   try {
-    const count = parseInt(await kv.get(key) || '0');
-    
-    if (count >= 100) {
-      throw new RateLimitError(3600, 'hourly');
-    }
-    
-    await kv.put(key, String(count + 1), { expirationTtl: 3600 });
+    outcome = await limiter.limit({ key: `${pathname}:${clientIP}` });
   } catch (error) {
-    if (error instanceof RateLimitError) throw error;
-    throw new AppError(ErrorCode.SERVICE_UNAVAILABLE, 'Rate limiting service unavailable');
+    console.warn('Public rate limiter unavailable; allowing request', {
+      pathname,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return;
+  }
+
+  if (!outcome.success) {
+    throw new RateLimitError(60, 'minute');
   }
 }
 
@@ -603,14 +648,26 @@ async function checkRateLimit(
   const dayKey = `ratelimit:${customerId}:day:${Math.floor(now / 86400000)}`;
 
   const increment = async (key: string, ttl: number): Promise<number> => {
+    let current: number;
     try {
-      const current = parseInt((await kv.get(key)) || "0");
-      const updated = current + 1;
-      await kv.put(key, updated.toString(), { expirationTtl: ttl });
-      return updated;
+      current = parseInt((await kv.get(key)) || "0");
     } catch (error) {
       throw new AppError(ErrorCode.SERVICE_UNAVAILABLE, 'Rate limiting service unavailable');
     }
+    const updated = current + 1;
+    try {
+      await kv.put(key, updated.toString(), { expirationTtl: ttl });
+    } catch (error) {
+      // KV allows one write per second per key, so two messages from the same
+      // customer in the same second can fail here. The quota was still checked
+      // against the value read above, so drop this increment rather than
+      // failing the user's message.
+      console.warn('Quota counter write failed; continuing', {
+        key,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+    return updated;
   };
 
   const currentHourCount = await increment(hourKey, 3600);
@@ -1072,7 +1129,53 @@ async function handleHealthCheck(env: Env): Promise<Response> {
 }
 
 export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext) {    const url = new URL(request.url);
+  /**
+   * Safety net around the router. An exception that escapes handleRequest
+   * would otherwise crash the Worker (error 1101). Cloudflare's error page has
+   * no CORS headers, so the browser hides the real failure behind a CORS
+   * error. Answer with a JSON 500 that carries CORS headers instead.
+   */
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    try {
+      return await handleRequest(request, env, ctx);
+    } catch (error) {
+      console.error('Unhandled error in request handler', {
+        path: new URL(request.url).pathname,
+        method: request.method,
+        error: error instanceof Error ? (error.stack || error.message) : String(error),
+      });
+      const origin = request.headers.get('origin') || '';
+      return new Response(
+        JSON.stringify({ error: { code: ErrorCode.INTERNAL_ERROR, message: 'Internal error' } }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            ...createCorsHeaders(origin, false),
+            ...SECURITY_HEADERS,
+          },
+        }
+      );
+    }
+  },
+
+  /**
+   * Scheduled handler — runs on a cron schedule defined in wrangler.jsonc.
+   * Cleans up expired/invalidated sessions from the D1 database.
+   */
+  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    ctx.waitUntil(
+      cleanupExpiredSessions(env.DB).then((deleted: number) => {
+        console.log(`[Scheduled] Cleaned up ${deleted} expired sessions`);
+      }).catch((err: unknown) => {
+        console.error('[Scheduled] Session cleanup failed:', err);
+      })
+    );
+  },
+};
+
+async function handleRequest(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const url = new URL(request.url);
     const origin = request.headers.get("origin") || "";
     const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
     
@@ -1096,7 +1199,10 @@ export default {
       '/api/auth/set-password', '/api/auth/password-reset-request', '/api/auth/password-reset',
       '/api/auth/email/send-verification', '/api/auth/email/verify', '/api/auth/email/resend',
       '/api/auth/email/status', '/verify-email',
-      '/reset-password'
+      '/reset-password',
+      // Comparison landing pages. Their handlers live in the public block below
+      // but were missing here, so they fell through to API-key auth.
+      '/vs-chatbase', '/vs-tidio', '/vs-hubspot'
     ];
     
     if (publicRoutes.includes(url.pathname)) {
@@ -1107,23 +1213,23 @@ export default {
       const allowed = isWidgetExchange || globalOrigins.includes('*') || globalOrigins.includes(origin);
       const corsHeaders = createCorsHeaders(origin, allowed);
       
-      if (url.pathname !== '/favicon.ico') {
-        try {
-          await checkPublicRateLimit(env.RATE_LIMITER, clientIP, url.pathname);
-        } catch (error) {
-          if (error instanceof RateLimitError) {
-            const response = await errorHandler.handleError(error, { url: url.pathname, clientIP });
-            const responseHeaders: Record<string, string> = {};
-            response.headers.forEach((value, key) => {
-              responseHeaders[key] = value;
-            });
-            return new Response(response.body, {
-              status: response.status,
-              headers: { ...responseHeaders, ...corsHeaders }
-            });
-          }
-          throw error;
-        }
+      try {
+        await checkPublicRateLimit(env, request, clientIP, url.pathname);
+      } catch (error) {
+        // checkPublicRateLimit fails open, so only RateLimitError reaches here;
+        // any other error is still answered with CORS headers, never re-thrown.
+        const response = await errorHandler.handleError(
+          error instanceof AppError ? error : new AppError(ErrorCode.INTERNAL_ERROR, 'Rate limit check failed'),
+          { url: url.pathname, clientIP }
+        );
+        const responseHeaders: Record<string, string> = {};
+        response.headers.forEach((value, key) => {
+          responseHeaders[key] = value;
+        });
+        return new Response(response.body, {
+          status: response.status,
+          headers: { ...responseHeaders, ...corsHeaders }
+        });
       }
       
       if (request.method === "OPTIONS") {
@@ -1919,19 +2025,4 @@ export default {
         return response;
       }
     }
-  },
-
-  /**
-   * Scheduled handler — runs on a cron schedule defined in wrangler.jsonc.
-   * Cleans up expired/invalidated sessions from the D1 database.
-   */
-  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
-    ctx.waitUntil(
-      cleanupExpiredSessions(env.DB).then((deleted: number) => {
-        console.log(`[Scheduled] Cleaned up ${deleted} expired sessions`);
-      }).catch((err: unknown) => {
-        console.error('[Scheduled] Session cleanup failed:', err);
-      })
-    );
-  },
-};
+}
