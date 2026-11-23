@@ -128,9 +128,16 @@ WHERE customer_id = 'cust_123';
 
 ### Preflight returns 403 with `cf-mitigated: challenge`
 
-- The request was stopped by a Cloudflare security rule on the zone before it reached the Worker. A preflight (`OPTIONS`) cannot solve a challenge, so the browser reports a CORS error for every cross-origin widget call.
-- Find the rule in the Cloudflare dashboard under Security → Events (filter by method `OPTIONS`).
-- Exclude `OPTIONS` from that rule, or add a Skip rule above it with the expression `(http.request.method eq "OPTIONS")`.
+- The request was stopped by a Cloudflare security rule on the zone before it reached the Worker. A preflight (`OPTIONS`) cannot solve a challenge, so the browser reports a CORS error for every cross-origin widget call. Code changes and rollbacks will not help; the fix is in the dashboard.
+- Find the rule in the Cloudflare dashboard under Security → Events: search the `cf-ray` value from the failing response and read the Service / Rule fields.
+- On insertabot.io (Nov 2026) the culprit was the managed rule **"Cloudflare Managed Response Firewall Default"**, scoped to *All incoming requests*. It challenged every method except `GET` (and `POST` with no body), on every path. Fixed with two changes:
+  1. Change that rule's scope to **Custom filter expression**: `(http.request.method ne "OPTIONS")`. Changes can take a few minutes to propagate.
+  2. Add a WAF custom **Skip** rule for widget traffic:
+     ```
+     (http.host eq "insertabot.io" and http.request.method in {"GET" "POST" "OPTIONS"} and http.request.uri.path in {"/v1/widget-token/exchange" "/v1/chat/completions" "/v1/widget/config"})
+     ```
+     Use `in {...}` for the methods; chaining `method eq "GET" and method eq "POST"` never matches.
+- On the free plan, Bot Fight Mode cannot be bypassed by a Skip rule; if Security Events names it, turn it off under Security → Bots.
 - Verify (expect `204` and an `Access-Control-Allow-Origin` header):
 
 ```bash
