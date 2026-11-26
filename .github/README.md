@@ -121,5 +121,5 @@ GNU-v2
 
 ## Support
 
-For issues or questions, please contact Mistyk Media at support@insertabot.io or admin@mistykmedia.io. Thank you!
+For issues or questions, please contact Mistyk Media at m1styk@ikmail.com or support@insertabot.io. Thank you!
 
